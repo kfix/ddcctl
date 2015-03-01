@@ -22,5 +22,5 @@ You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets
 
 Caveats
 ----
-VGA cables seem to wreak havoc with DDC comms. Use DVI if you can.  
-I do not have DisplayPort or Thunderbolt hardware to test with yet.  
+VGA cables seem to wreak havoc with DDC comms. Use DVI ord DisplayPort if you can.  
+I do not have Thunderbolt hardware to test with yet.  
