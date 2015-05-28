@@ -8,9 +8,69 @@
 
 
 #include <IOKit/IOKitLib.h>
+#include <IOKit/graphics/IOGraphicsLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include "DDC.h"
-#define kDelayBase 60
+#define kDelayBase 100
+
+static io_service_t IOServicePortFromCGDisplayID(CGDirectDisplayID displayID)
+{
+    io_iterator_t iter;
+    io_service_t serv, servicePort = 0;
+
+    CFMutableDictionaryRef matching = IOServiceMatching("IODisplayConnect");
+
+    // releases matching for us
+    kern_return_t err = IOServiceGetMatchingServices(kIOMasterPortDefault,
+                             matching,
+                             &iter);
+    if (err)
+    {
+        return 0;
+    }
+
+    while ((serv = IOIteratorNext(iter)) != 0)
+    {
+        CFDictionaryRef info;
+        CFIndex vendorID, productID;
+        CFNumberRef vendorIDRef, productIDRef;
+        Boolean success;
+
+        info = IODisplayCreateInfoDictionary(serv,
+                             kIODisplayOnlyPreferredName);
+
+        vendorIDRef = CFDictionaryGetValue(info,
+                           CFSTR(kDisplayVendorID));
+        productIDRef = CFDictionaryGetValue(info,
+                            CFSTR(kDisplayProductID));
+
+        success = CFNumberGetValue(vendorIDRef, kCFNumberCFIndexType,
+                                   &vendorID);
+        success &= CFNumberGetValue(productIDRef, kCFNumberCFIndexType,
+                                    &productID);
+
+        if (!success)
+        {
+            CFRelease(info);
+            continue;
+        }
+
+        if (CGDisplayVendorNumber(displayID) != vendorID ||
+            CGDisplayModelNumber(displayID) != productID)
+        {
+            CFRelease(info);
+            continue;
+        }
+
+        // we're a match
+        servicePort = serv;
+        CFRelease(info);
+        break;
+    }
+
+    IOObjectRelease(iter);
+    return servicePort;
+}
 
 dispatch_semaphore_t DisplayQueue(CGDirectDisplayID displayID) {
     static UInt64 queueCount = 0;
@@ -36,7 +96,11 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
     dispatch_semaphore_wait(queue, DISPATCH_TIME_FOREVER);
     bool result = false;
     io_service_t framebuffer;
-    if ((framebuffer = CGDisplayIOServicePort(displayID))) {
+    if ((framebuffer = CGDisplayIOServicePort(displayID))) { // FIXME: DEPRECATED!
+		// http://stackoverflow.com/questions/20025868/cgdisplayioserviceport-is-deprecated-in-os-x-10-9-how-to-replace
+		// http://stackoverflow.com/questions/24348142/cgdirectdisplayid-multiple-gpus-deprecated-cgdisplayioserviceport-and-uniquely
+	//if ((framebuffer = IOServicePortFromCGDisplayID(displayID))) { // https://github.com/glfw/glfw/pull/192/files
+	//^ doesn't work and wouldn't help with multiple identical monitors
         IOItemCount busCount;
         if (IOFBGetI2CInterfaceCount(framebuffer, &busCount) == KERN_SUCCESS) {
             IOOptionBits bus = 0;
@@ -68,46 +132,76 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
     dispatch_semaphore_signal(queue);
     return result && request->result == KERN_SUCCESS;
 }
+
 bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
-    IOI2CRequest request = {};
-    request.commFlags = kIOI2CUseSubAddressCommFlag;
-    request.sendAddress = 0x6E;
-    request.sendSubAddress = 0x51;
-    request.sendTransactionType = kIOI2CSimpleTransactionType;
-    UInt8 data[6] = {0x80, 0x03, write->control_id, 0x0, write->new_value};
-    data[0]+=sizeof(data)-2;
-    data[5] = request.sendAddress ^ request.sendSubAddress ^ data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[4];
-    request.sendBuffer = (vm_address_t) data;
-    request.sendBytes = sizeof(data);
-    request.replyTransactionType = kIOI2CNoTransactionType;
+    IOI2CRequest    request;
+    UInt8           data[128];
+
+    bzero( &request, sizeof(request));
+
+    request.commFlags                       = 0;
+
+    request.sendAddress                     = 0x6E;
+    request.sendTransactionType             = kIOI2CSimpleTransactionType;
+    request.sendBuffer                      = (vm_address_t) &data[0];
+    request.sendBytes                       = 7;
+
+    data[0] = 0x51;
+    data[1] = 0x84;
+    data[2] = 0x03;
+    data[3] = write->control_id;
+    data[4] = 0x64 ;
+    data[5] = write->new_value ;
+    data[6] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3]^ data[4]^
+    data[5];
+
+
+    request.replyTransactionType    = kIOI2CNoTransactionType;
+    request.replyBytes                      = 0;
+
+
     bool result = DisplayRequest(displayID, &request);
     return result;
 }
+
 bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
-    IOI2CRequest request = {};
+    kern_return_t kr;
+    IOI2CRequest request;
     UInt8 reply_data[11] = {};
     bool result = false;
-    request.commFlags = kIOI2CUseSubAddressCommFlag;
-    request.sendAddress = 0x6E;
-    request.sendSubAddress = 0x51;
-    request.sendTransactionType = kIOI2CSimpleTransactionType;
-    UInt8 data[4] = {0x80, 0x1, read->control_id};
-    data[0]+=sizeof(data)-2;
-    data[3] = request.sendAddress ^ request.sendSubAddress ^ data[0] ^ data[1] ^ data[2];
-    request.sendBuffer = (vm_address_t) data;
-    request.sendBytes = sizeof(data);
-    request.replyAddress = 0x6F;
-    request.replySubAddress = request.sendSubAddress;
-    request.replyTransactionType = kIOI2CDDCciReplyTransactionType;
+    UInt8 data[128];
+
+
+    bzero( &request, sizeof(request));
+
+    request.commFlags                       = 0;
+
+    request.sendAddress                     = 0x6E;
+    request.sendTransactionType             = kIOI2CSimpleTransactionType;
+    request.sendBuffer                      = (vm_address_t) &data[0];
+    request.sendBytes                       = 5;
+    request.minReplyDelay = kDelayBase;
+
+    data[0] = 0x51;
+    data[1] = 0x82;
+    data[2] = 0x01;
+    data[3] = read->control_id;
+    data[4] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3];
+
+    request.replyTransactionType    = kIOI2CDDCciReplyTransactionType;
+    request.replyAddress            = 0x6F;
+    request.replySubAddress         = 0x51;
+
     request.replyBuffer = (vm_address_t) reply_data;
     request.replyBytes = sizeof(reply_data);
-    request.minReplyDelay = kDelayBase;
+
     result = DisplayRequest(displayID, &request);
     result = (result && reply_data[0] == request.sendAddress && reply_data[2] == 0x2 && reply_data[4] == read->control_id && reply_data[10] == (request.replyAddress ^ request.replySubAddress ^ reply_data[1] ^ reply_data[2] ^ reply_data[3] ^ reply_data[4] ^ reply_data[5] ^ reply_data[6] ^ reply_data[7] ^ reply_data[8] ^ reply_data[9]));
     read->max_value = reply_data[7];
     read->current_value = reply_data[9];
     return result;
 }
+
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid) {
     IOI2CRequest request = {};
     UInt8 data[128] = {};

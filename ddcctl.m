@@ -60,27 +60,33 @@ int main(int argc, const char * argv[])
 {
 
     @autoreleasepool {
-        
+
         NSPointerArray *_displayIDs = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality];
-        
+
         for (NSScreen *screen in NSScreen.screens) {
-            if ([screen.deviceDescription objectForKey:@"NSDeviceIsScreen"]) {
-               CGDirectDisplayID new = [[screen.deviceDescription objectForKey:@"NSScreenNumber"] unsignedIntValue];
-              [_displayIDs addPointer:(void *)(UInt64)new];
-            }
+             NSDictionary *description = [screen deviceDescription];
+             NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
+             CGSize displayPhysicalSize = CGDisplayScreenSize([[description objectForKey:@"NSScreenNumber"] unsignedIntValue]); //dspPhySz only valid if EDID present!
+             MyLog(@"DPI is %0.2f", (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
+
+             if ([screen.deviceDescription objectForKey:@"NSDeviceIsScreen"]) {
+                CGDirectDisplayID new = [[screen.deviceDescription objectForKey:@"NSScreenNumber"] unsignedIntValue];
+               [_displayIDs addPointer:(void *)(UInt64)new];
+             }
         }
         MyLog(@"I: found %lu displays",[_displayIDs count]);
-        
+
         NSDictionary *argpairs = [[NSUserDefaults standardUserDefaults] volatileDomainForName:NSArgumentDomain];
         NSDictionary *switches = @{ // @MCCS:VCP codes we support from http://wenku.baidu.com/view/9a94824c767f5acfa1c7cd80.html
                                    @"b": @BRIGHTNESS,
                                    @"c": @CONTRAST,
                                    @"d": @-1, //set_display consumed by app
+                                   @"D": @-1, //dump_values consumed by app
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
                                    @"s": @AUDIO_SPEAKER_VOLUME, //pg94
                                    }; //should test against http://www.entechtaiwan.com/lib/softmccs.shtm
-        
+
         NSUInteger set_display = [[NSUserDefaults standardUserDefaults] integerForKey:@"d"];
         if (0 < set_display && set_display <= [_displayIDs count])
         {
@@ -99,18 +105,26 @@ int main(int argc, const char * argv[])
                             break;
                     }
                 }
+
+		        NSUInteger dump_values = [[NSUserDefaults standardUserDefaults] integerForKey:@"D"];
+        		if (0 < dump_values) {
+					for(uint i=0x00; i<=255; i++)
+						get_control(cdisplay, i);
+						//MyLog(@"I: Dumped %x = %d\n", i, get_control(cdisplay, i));
+				}
+
                 [argpairs enumerateKeysAndObjectsUsingBlock:^(id argname, NSString* argval, BOOL *stop) {
                     MyLog(@"D: command arg-pair: %@: %@", argname, argval);
 
                     NSInteger control_id = [[switches valueForKey:argname] intValue];
                     if (control_id > -1){ //this is a valid monitor control from switches
-                        
-                        sleep(0.1); //stagger comms to these wimpy I2C mcu's
+
+                        sleep(1); //stagger comms to these wimpy I2C mcu's
 
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; //look for relative setting ops
                         if (argval != argval_num) { //relative setting: read, calculate, then write
 
-                           NSString *formula = [NSString stringWithFormat:@"%lu %@ %@", 
+                           NSString *formula = [NSString stringWithFormat:@"%u %@ %@",
                                get_control(cdisplay, control_id), //current
                                [argval substringFromIndex:argval.length - 1], //OP
                                argval_num //new
