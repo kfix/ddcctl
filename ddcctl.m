@@ -65,13 +65,16 @@ int main(int argc, const char * argv[])
 
         for (NSScreen *screen in NSScreen.screens) {
              NSDictionary *description = [screen deviceDescription];
-             NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
-             CGSize displayPhysicalSize = CGDisplayScreenSize([[description objectForKey:@"NSScreenNumber"] unsignedIntValue]); //dspPhySz only valid if EDID present!
-             MyLog(@"DPI is %0.2f", (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
-
-             if ([screen.deviceDescription objectForKey:@"NSDeviceIsScreen"]) {
-                CGDirectDisplayID new = [[screen.deviceDescription objectForKey:@"NSScreenNumber"] unsignedIntValue];
-               [_displayIDs addPointer:(void *)(UInt64)new];
+             if ([description objectForKey:@"NSDeviceIsScreen"]) {
+                CGDirectDisplayID screenNumber = [[description objectForKey:@"NSScreenNumber"] unsignedIntValue];
+                [_displayIDs addPointer:(void *)(UInt64)screenNumber];
+                NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
+                CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); //dspPhySz only valid if EDID present!
+                MyLog(@"D: NSScreen #%u (%.0fx%.0f) DPI is %0.2f",
+                   screenNumber,
+                   displayPixelSize.width, displayPixelSize.height,
+                   (displayPixelSize.width / displayPhysicalSize.width) * 25.4f // there being 25.4 mm in an inch
+                );
              }
         }
         MyLog(@"I: found %lu displays",[_displayIDs count]);
@@ -119,8 +122,6 @@ int main(int argc, const char * argv[])
                     NSInteger control_id = [[switches valueForKey:argname] intValue];
                     if (control_id > -1){ //this is a valid monitor control from switches
 
-                        sleep(1); //stagger comms to these wimpy I2C mcu's
-
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; //look for relative setting ops
                         if (argval != argval_num) { //relative setting: read, calculate, then write
 
@@ -134,6 +135,7 @@ int main(int argc, const char * argv[])
                            MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
 
                            if (set_value.intValue >= 0) {
+                              sleep(1); // allow read to finish 
                               set_control(cdisplay, control_id, set_value.unsignedIntValue);
                            }
 
@@ -143,8 +145,8 @@ int main(int argc, const char * argv[])
                         } else { //write fixed setting
                            set_control(cdisplay, control_id, [argval intValue]);
                         }
-
                     }
+                    sleep(1); //stagger comms to these wimpy I2C mcu's
                 }];
 
             } else {
