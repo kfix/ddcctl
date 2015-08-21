@@ -85,11 +85,13 @@ int main(int argc, const char * argv[])
                                    @"c": @CONTRAST,
                                    @"d": @-1, //set_display consumed by app
                                    @"D": @-1, //dump_values consumed by app
+                                   @"w": @100000, //command_interval consumed by app
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
                                    @"s": @AUDIO_SPEAKER_VOLUME, //pg94
                                    }; //should test against http://www.entechtaiwan.com/lib/softmccs.shtm
 
+        NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
         NSUInteger set_display = [[NSUserDefaults standardUserDefaults] integerForKey:@"d"];
         if (0 < set_display && set_display <= [_displayIDs count])
         {
@@ -135,7 +137,7 @@ int main(int argc, const char * argv[])
                            MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
 
                            if (set_value.intValue >= 0) {
-                              sleep(1); // allow read to finish 
+                              usleep(command_interval); // allow read to finish 
                               set_control(cdisplay, control_id, set_value.unsignedIntValue);
                            }
 
@@ -146,7 +148,7 @@ int main(int argc, const char * argv[])
                            set_control(cdisplay, control_id, [argval intValue]);
                         }
                     }
-                    sleep(1); //stagger comms to these wimpy I2C mcu's
+                    usleep(command_interval); //stagger comms to these wimpy I2C mcu's
                 }];
 
             } else {
@@ -154,7 +156,18 @@ int main(int argc, const char * argv[])
                 return -1;
             }
         } else { //no display id given
-            MyLog(@"Usage:\n ddcctl -d <1-..> [display#]\n\t-b <1-..> [brightness]\n\t-c <1-..> [contrast]\n\t-m <1|2> [mute speaker OFF/ON]\n\t-v <1-254> [speaker volume]\n\t-i <1-12> [select input source]\n -X ? (queries setting X)\n -X <NN>- (decreases setting X by NN)\n -X <NN>+ (increases setting X by NN)");
+            MyLog(@"Usage:\n\
+ ddcctl -d <1-..> [display#]\n\
+	-w 100000 [delay usecs between settings]\n\
+	-b <1-..> [brightness]\n\
+	-c <1-..> [contrast]\n\
+	-m <1|2> [mute speaker OFF/ON]\n\
+	-v <1-254> [speaker volume]\n\
+	-i <1-12> [select input source]\n\
+ -X ? (queries setting X)\n\
+ -X NN (setting X to NN)\n\
+ -X <NN>- (decreases setting X by NN)\n\
+ -X <NN>+ (increases setting X by NN)");
         }
     }
     return 0;
