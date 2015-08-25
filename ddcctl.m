@@ -160,18 +160,18 @@ int main(int argc, const char * argv[])
             MyLog(@"Usage:\n\
  ddcctl -d <1-..> [display#]\n\
 	-w 100000 [delay usecs between settings]\n\
-
------ Basic settings -----
+\
+----- Basic settings -----\n\
 	-b <1-..> [brightness]\n\
 	-c <1-..> [contrast]\n\
-
------ Settings that don't always work -----
+\
+----- Settings that don\'t always work -----\n\
 	-m <1|2> [mute speaker OFF/ON]\n\
 	-v <1-254> [speaker volume]\n\
 	-i <1-12> [select input source]\n\
 	-p <1|2-5> [power on | standby/off]\n\
-
------ Setting grammar -----
+\
+----- Setting grammar -----\n\
  -X ? (queries setting X)\n\
  -X NN (setting X to NN)\n\
  -X <NN>- (decreases setting X by NN)\n\
