@@ -89,7 +89,7 @@ int main(int argc, const char * argv[])
                                    @"p": @DPMS, //
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
-                                   @"s": @AUDIO_SPEAKER_VOLUME, //pg94
+                                   @"v": @AUDIO_SPEAKER_VOLUME, //pg94
                                    }; //should test against http://www.entechtaiwan.com/lib/softmccs.shtm
 
         NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
