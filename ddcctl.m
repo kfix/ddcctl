@@ -90,6 +90,7 @@ int main(int argc, const char * argv[])
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
                                    @"v": @AUDIO_SPEAKER_VOLUME, //pg94
+                                   @"o": @ORIENTATION,
                                    }; //should test against http://www.entechtaiwan.com/lib/softmccs.shtm
 
         NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
@@ -170,6 +171,7 @@ int main(int argc, const char * argv[])
 	-v <1-254> [speaker volume]\n\
 	-i <1-12> [select input source]\n\
 	-p <1|2-5> [power on | standby/off]\n\
+    -o [read-only orientation]\n\
 \
 ----- Setting grammar -----\n\
  -X ? (queries setting X)\n\

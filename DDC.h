@@ -45,6 +45,7 @@
 #define RED_BLACK_LEVEL 0x6C
 #define GREEN_BLACK_LEVEL 0x6E
 #define BLUE_BLACK_LEVEL 0x70
+#define ORIENTATION 0xAA
 #define AUDIO_MUTE 0x8D
 #define SETTINGS 0xB0                  //unsure on this one
 #define ON_SCREEN_DISPLAY 0xCA
