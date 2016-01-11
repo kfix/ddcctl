@@ -23,6 +23,10 @@
 //  Tipp: Use 'Karabiner' to map some keyboard keys to 5- and 5+
 //  For me this works exelent with the brightness keys of my apple magic keyboard.
 //
+//  Since I set minReplyDelay to zero, my system didn't freeze any more
+//  But my Dell gives me old values at the first read so I add: save-mode
+//  In save-mode the app reads current value twice to be sure. Use '-s y' to activate.
+//
 //  Have fun!
 //
 
@@ -38,6 +42,7 @@
 
 NSUserDefaults *defaults;
 int blacklistedDeviceWithNumber;
+bool save_mode;
 
 NSString *EDIDString(char *string)
 {
@@ -72,6 +77,11 @@ uint get_control(CGDirectDisplayID cdisplay, uint control_id)
         
     } else {
         MyLog(@"D: querying VCP control: #%u =?", command.control_id);
+        
+        if (save_mode) {
+            DDCRead(cdisplay, &command);
+            usleep(100 * kMicrosecondScale);
+        }
         
         if (!DDCRead(cdisplay, &command)) {
             MyLog(@"E: DDC send command failed!");
@@ -146,12 +156,14 @@ int main(int argc, const char * argv[])
                                    @"v": @AUDIO_SPEAKER_VOLUME, // pg94
                                    @"o": @ORIENTATION,
                                    @"u": @-1,                   // use user-defaults to store current value
+                                   @"s": @-1,                   // save-mode: read current value twice to be sure
                                    }; // should test against http://www.entechtaiwan.com/lib/softmccs.shtm
         
         NSString *screenName = @"";
         NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
         NSUInteger set_display = [[NSUserDefaults standardUserDefaults] integerForKey:@"d"];
         NSString *useDefaults = [[NSUserDefaults standardUserDefaults] stringForKey:@"u"];
+        save_mode = ([[[NSUserDefaults standardUserDefaults] stringForKey:@"s"] isEqualToString:@"y"]) ? true : false;
         
         if (0 < set_display && set_display <= [_displayIDs count]) {
             MyLog(@"I: polling display %lu's EDID", set_display);
@@ -181,7 +193,7 @@ int main(int argc, const char * argv[])
                                               [NSNumber numberWithInt:50], @"Brightness-2", [NSNumber numberWithInt:50], @"Contrast-2",
                                               [NSNumber numberWithInt:50], @"Brightness-3", [NSNumber numberWithInt:50], @"Contrast-3",
                                               [NSNumber numberWithInt:0],  @"MinValue",     [NSNumber numberWithInt:100], @"MaxValue",
-                                              [NSArray arrayWithObjects: @"DELL U2515H", @"DELL U2715H", nil], @"Blacklist", nil];
+                                              [NSArray arrayWithObjects: @"DELL U2515H", @"My second Monitor", nil], @"Blacklist", nil];
                 defaults = [NSUserDefaults standardUserDefaults];
                 [defaults registerDefaults:defaultsDict];
                 
@@ -262,20 +274,21 @@ int main(int argc, const char * argv[])
             }
         } else { // no display id given
             MyLog(@"Usage:\n\
-ddcctl -d <1-..> [display#]\n\
-       -w 100000 [delay usecs between settings]\n\
+ddcctl -d <1-..>  [display#]\n\
+       -w 100000  [delay usecs between settings]\n\
 \
 ----- Basic settings -----\n\
-       -b <1-..> [brightness]\n\
-       -c <1-..> [contrast]\n\
-       -u <y|n>  [blacklist on|off]\n\
+       -b <1-..>  [brightness]\n\
+       -c <1-..>  [contrast]\n\
+       -u <y|n|c> [blacklist on|off|create]\n\
+       -s <y|n>   [save-mode: read current value twice to be sure on|off]\n\
 \
 ----- Settings that don\'t always work -----\n\
-       -m <1|2> [mute speaker OFF/ON]\n\
+       -m <1|2>   [mute speaker OFF/ON]\n\
        -v <1-254> [speaker volume]\n\
-       -i <1-12> [select input source]\n\
+       -i <1-12>  [select input source]\n\
        -p <1|2-5> [power on | standby/off]\n\
-       -o [read-only orientation]\n\
+       -o         [read-only orientation]\n\
 \
 ----- Setting grammar -----\n\
        -X ? (queries setting X)\n\
