@@ -179,7 +179,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
     request.sendTransactionType             = kIOI2CSimpleTransactionType;
     request.sendBuffer                      = (vm_address_t) &data[0];
     request.sendBytes                       = 5;
-    request.minReplyDelay = kDelayBase;
+    request.minReplyDelay                   = 0;
 
     data[0] = 0x51;
     data[1] = 0x82;
