@@ -138,7 +138,20 @@ int main(int argc, const char * argv[])
                 [_displayIDs addPointer:(void *)(UInt64)screenNumber];
                 NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
                 CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); // dspPhySz only valid if EDID present!
-                MyLog(@"D: NSScreen #%u (%.0fx%.0f) DPI is %0.2f", screenNumber, displayPixelSize.width, displayPixelSize.height, (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
+                float displayScale = [screen backingScaleFactor];
+                if (displayScale > 1) {
+                    MyLog(@"D: NSScreen #%u (%.0fx%.0f HiDPI)",
+                          screenNumber,
+                          displayPixelSize.width,
+                          displayPixelSize.height);
+                }
+                else {
+                    MyLog(@"D: NSScreen #%u (%.0fx%.0f) DPI is %0.2f",
+                          screenNumber,
+                          displayPixelSize.width,
+                          displayPixelSize.height,
+                          (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
+                }
             }
         }
         MyLog(@"I: found %lu displays", [_displayIDs count]);
