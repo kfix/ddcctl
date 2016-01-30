@@ -35,7 +35,7 @@
 //  Have fun!
 //
 
-#define OSD 1
+//#define OSD
 
 #ifdef DEBUG
 #define MyLog NSLog
