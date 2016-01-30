@@ -25,15 +25,22 @@
 //
 //  Since I set minReplyDelay to zero, my system didn't freeze any more
 //  But my Dell gives me old values at the first read so I add: save-mode
-//  In save-mode the app reads current value twice to be sure. Use '-s y' to activate.
+//  In save-mode the app reads current value twice to be sure. Use '-s' to activate.
+//
+//  Now using argv[] instead off user-defaults to handle commandline arguments.
+//
+//  Added optional use of an external app 'OSDisplay' to have a BezelUI like OSD.
+//  Use '-O' to activate.
 //
 //  Have fun!
 //
 
-#ifdef NDEBUG
-#define MyLog(...) (void)printf("%s\n",[[NSString stringWithFormat:__VA_ARGS__] UTF8String])
-#else
+#define OSD 1
+
+#ifdef DEBUG
 #define MyLog NSLog
+#else
+#define MyLog(...) (void)printf("%s\n",[[NSString stringWithFormat:__VA_ARGS__] UTF8String])
 #endif
 
 #import <Foundation/Foundation.h>
@@ -42,7 +49,10 @@
 
 NSUserDefaults *defaults;
 int blacklistedDeviceWithNumber;
-bool save_mode;
+bool useSaveMode;
+#ifdef OSD
+bool useOsd;
+#endif
 
 NSString *EDIDString(char *string)
 {
@@ -50,7 +60,8 @@ NSString *EDIDString(char *string)
     return ([temp rangeOfString:@"\n"].location != NSNotFound) ? [[temp componentsSeparatedByString:@"\n"] objectAtIndex:0] : temp;
 }
 
-uint get_control(CGDirectDisplayID cdisplay, uint control_id)
+/* Get current value for control from display */
+uint getControl(CGDirectDisplayID cdisplay, uint control_id)
 {
     struct DDCReadCommand command;
     command.control_id = control_id;
@@ -78,7 +89,7 @@ uint get_control(CGDirectDisplayID cdisplay, uint control_id)
     } else {
         MyLog(@"D: querying VCP control: #%u =?", command.control_id);
         
-        if (save_mode) {
+        if (useSaveMode) {
             DDCRead(cdisplay, &command);
             usleep(100 * kMicrosecondScale);
         }
@@ -94,7 +105,8 @@ uint get_control(CGDirectDisplayID cdisplay, uint control_id)
     return command.current_value;
 }
 
-void set_control(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
+/* Set new value for control from display */
+void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
 {
     struct DDCWriteCommand command;
     command.control_id = control_id;
@@ -121,8 +133,32 @@ void set_control(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
         }
         [defaults synchronize];
     }
+#ifdef OSD
+    if (useOsd) {
+        NSString *OSDisplay = @"/Applications/OSDisplay.app/Contents/MacOS/OSDisplay";
+        switch (control_id) {
+            case 16:
+                [NSTask launchedTaskWithLaunchPath:OSDisplay
+                                         arguments:[NSArray arrayWithObjects:
+                                                    @"-l", [NSString stringWithFormat:@"%u", new_value],
+                                                    @"-i", @"brightness", nil]];
+                break;
+                
+            case 18:
+                [NSTask launchedTaskWithLaunchPath:OSDisplay
+                                         arguments:[NSArray arrayWithObjects:
+                                                    @"-l", [NSString stringWithFormat:@"%u", new_value],
+                                                    @"-i", @"contrast", nil]];
+                break;
+                
+            default:
+                break;
+        }
+    }
+#endif
 }
 
+/* Main function */
 int main(int argc, const char * argv[])
 {
     
@@ -154,33 +190,137 @@ int main(int argc, const char * argv[])
                 }
             }
         }
-        MyLog(@"I: found %lu displays", [_displayIDs count]);
+        MyLog(@"I: found %lu display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
+
         
-        NSDictionary *argpairs = [[NSUserDefaults standardUserDefaults] volatileDomainForName:NSArgumentDomain];
-        NSDictionary *switches = @{ // @MCCS:VCP codes we support from http://wenku.baidu.com/view/9a94824c767f5acfa1c7cd80.html
-                                   @"b": @BRIGHTNESS,
-                                   @"c": @CONTRAST,
-                                   @"d": @-1,                   // set_display consumed by app
-                                   @"D": @-1,                   // dump_values consumed by app
-                                   @"w": @100000,               // command_interval consumed by app
-                                   @"p": @DPMS,                 //
-                                   @"i": @INPUT_SOURCE,         // pg85
-                                   @"m": @AUDIO_MUTE,
-                                   @"v": @AUDIO_SPEAKER_VOLUME, // pg94
-                                   @"o": @ORIENTATION,
-                                   @"u": @-1,                   // use user-defaults to store current value
-                                   @"s": @-1,                   // save-mode: read current value twice to be sure
-                                   }; // should test against http://www.entechtaiwan.com/lib/softmccs.shtm
-        
+        // Defaults
         NSString *screenName = @"";
-        NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
-        NSUInteger set_display = [[NSUserDefaults standardUserDefaults] integerForKey:@"d"];
-        NSString *useDefaults = [[NSUserDefaults standardUserDefaults] stringForKey:@"u"];
-        save_mode = ([[[NSUserDefaults standardUserDefaults] stringForKey:@"s"] isEqualToString:@"y"]) ? true : false;
+        NSUInteger displayId = -1;
+        NSUInteger command_interval = 100000;
+        BOOL dump_values = NO;
+        NSString *useDefaults = @"";
         
-        if (0 < set_display && set_display <= [_displayIDs count]) {
-            MyLog(@"I: polling display %lu's EDID", set_display);
-            CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:set_display - 1];
+        NSString *HelpString = @"Usage:\n"
+        @"ddcctl \t-d <1-..>  [display#]\n"
+        @"\t-w 100000  [delay usecs between settings]\n"
+        @"\n"
+        @"----- Basic settings -----\n"
+        @"\t-b <1-..>  [brightness]\n"
+        @"\t-c <1-..>  [contrast]\n"
+        @"\t-u <y|n|c> [blacklist on|off|create]\n"
+        @"\t-s         [save-mode: read current value twice to be sure]\n"
+#ifdef OSD
+        @"\t-O         [osd: needs external app 'OSDisplay']\n"
+#endif
+        @"\n"
+        @"----- Settings that don\'t always work -----\n"
+        @"\t-m <1|2>   [mute speaker OFF/ON]\n"
+        @"\t-v <1-254> [speaker volume]\n"
+        @"\t-i <1-12>  [select input source]\n"
+        @"\t-p <1|2-5> [power on | standby/off]\n"
+        @"\t-o         [read-only orientation]\n"
+        @"\n"
+        @"----- Setting grammar -----\n"
+        @"\t-X ?       (query value of setting X)\n"
+        @"\t-X NN      (put setting X to NN)\n"
+        @"\t-X <NN>-   (decrease setting X by NN)\n"
+        @"\t-X <NN>+   (increase setting X by NN)";
+        
+        
+        // Commandline Arguments
+        NSMutableDictionary *actions = [[NSMutableDictionary alloc] init];
+        
+        for (int i=1; i<argc; i++)
+        {
+            if (!strcmp(argv[i], "-d")) {
+                i++;
+                if (i >= argc) break;
+                displayId = atoi(argv[i]);
+            }
+            
+            else if (!strcmp(argv[i], "-b")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@BRIGHTNESS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"b"];
+            }
+            
+            else if (!strcmp(argv[i], "-c")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@CONTRAST, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"c"];
+            }
+            
+            else if (!strcmp(argv[i], "-D")) {
+                dump_values = YES;
+            }
+            
+            else if (!strcmp(argv[i], "-u")) {
+                i++;
+                if (i >= argc) break;
+                useDefaults = [[NSString alloc] initWithUTF8String:argv[i]];
+            }
+            
+            else if (!strcmp(argv[i], "-s")) {
+                useSaveMode = YES;
+            }
+            
+            else if (!strcmp(argv[i], "-p")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@DPMS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"p"];
+            }
+            
+            else if (!strcmp(argv[i], "-o")) {
+                i++;
+                if (i >= argc) break;
+                //[actions setObject:@[@ORIENTATION, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"o"];
+                [actions setObject:@[@ORIENTATION, @"?"] forKey:@"o"];
+            }
+            
+            else if (!strcmp(argv[i], "-i")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@INPUT_SOURCE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"i"];
+            }
+            
+            else if (!strcmp(argv[i], "-m")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@AUDIO_MUTE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"m"];
+            }
+            
+            else if (!strcmp(argv[i], "-v")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@AUDIO_SPEAKER_VOLUME, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"v"];
+            }
+            
+            else if (!strcmp(argv[i], "-w")) {
+                i++;
+                if (i >= argc) break;
+                command_interval = atoi(argv[i]);
+            }
+#ifdef OSD
+            else if (!strcmp(argv[i], "-O")) {
+                useOsd = YES;
+            }
+#endif
+            else if (!strcmp(argv[i], "-h")) {
+                NSLog(@"ddctl 0.1 - %@", HelpString);
+                return 0;
+            }
+            
+            else {
+                NSLog(@"Unknown argument: %@", [[NSString alloc] initWithUTF8String:argv[i]]);
+                return -1;
+            }
+        }
+        
+        
+        // Let's go...
+        if (0 < displayId && displayId <= [_displayIDs count]) {
+            MyLog(@"I: polling display %lu's EDID", displayId);
+            CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
             struct EDID edid = {};
             if (EDIDTest(cdisplay, &edid)) {
                 for (NSValue *value in @[[NSValue valueWithPointer:&edid.descriptor1],
@@ -216,11 +356,11 @@ int main(int argc, const char * argv[])
                     MyLog(@"D: blacklist is disabled");
                 }
                 else if ([useDefaults isEqualToString:@"y"]) {
-                    blacklistedDeviceWithNumber = set_display;
+                    blacklistedDeviceWithNumber = displayId;
                     MyLog(@"I: using user-defaults to store current value");
                 }
                 else if ([useDefaults isEqualToString:@"c"]) {
-                    blacklistedDeviceWithNumber = set_display;
+                    blacklistedDeviceWithNumber = displayId;
                     MyLog(@"I: creating blacklist with %@", screenName);
                     MyLog(@"I: using user-defaults to store current value");
                     [defaults setObject:[NSArray arrayWithObjects:screenName, nil] forKey:@"Blacklist"];
@@ -230,7 +370,7 @@ int main(int argc, const char * argv[])
                     for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
                     {
                         if ([(NSString *)object isEqualToString:screenName]) {
-                            blacklistedDeviceWithNumber = set_display;
+                            blacklistedDeviceWithNumber = displayId;
                             MyLog(@"I: found edid.name in blacklist");
                             MyLog(@"I: using user-defaults to store current value");
                             break;
@@ -238,24 +378,25 @@ int main(int argc, const char * argv[])
                     }
                 }
 
-                NSUInteger dump_values = [[NSUserDefaults standardUserDefaults] integerForKey:@"D"];
-                if (0 < dump_values) {
-                    for(uint i=0x00; i<=255; i++)
-                        get_control(cdisplay, i);
-                    //MyLog(@"I: Dumped %x = %d\n", i, get_control(cdisplay, i));
+                if (dump_values) {
+                    for (uint i=0x00; i<=255; i++)
+                        getControl(cdisplay, i);
+                    //MyLog(@"I: Dumped %x = %d\n", i, getControl(cdisplay, i));
                 }
                 
-                [argpairs enumerateKeysAndObjectsUsingBlock:^(id argname, NSString* argval, BOOL *stop) {
-                    MyLog(@"D: command arg-pair: %@: %@", argname, argval);
+                
+                [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
+                    NSInteger control_id = [valueArray[0] intValue];
+                    NSString *argval = valueArray[1];
+                    MyLog(@"D: action: %@: %@", argname, argval);
                     
-                    NSInteger control_id = [[switches valueForKey:argname] intValue];
                     if (control_id > -1) {
-                        // this is a valid monitor control from switches
+                        // this is a valid monitor control
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
                         if (argval != argval_num) {
                             // relative setting: read, calculate, then write
                             NSString *formula = [NSString stringWithFormat:@"%u %@ %@",
-                                                 get_control(cdisplay, control_id),             // current
+                                                 getControl(cdisplay, control_id),             // current
                                                  [argval substringFromIndex:argval.length - 1], // OP
                                                  argval_num                                     // new
                                                  ];
@@ -265,17 +406,17 @@ int main(int argc, const char * argv[])
                             if (set_value.intValue >= [defaults integerForKey:@"MinValue"] && set_value.intValue <= [defaults integerForKey:@"MaxValue"]) {
                                 MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
                                 usleep(command_interval); // allow read to finish
-                                set_control(cdisplay, control_id, set_value.unsignedIntValue);
+                                setControl(cdisplay, control_id, set_value.unsignedIntValue);
                             } else {
                                 MyLog(@"D: relative setting: %@ = %d is out of range!", formula, set_value.intValue);
                             }
                             
                         } else if ([argval hasPrefix:@"?"]) {
                             // read current setting
-                            get_control(cdisplay, control_id);
+                            getControl(cdisplay, control_id);
                         } else {
                             // write fixed setting
-                            set_control(cdisplay, control_id, [argval intValue]);
+                            setControl(cdisplay, control_id, [argval intValue]);
                         }
                     }
                     usleep(command_interval); // stagger comms to these wimpy I2C mcu's
@@ -286,28 +427,7 @@ int main(int argc, const char * argv[])
                 return -1;
             }
         } else { // no display id given
-            MyLog(@"Usage:\n\
-ddcctl -d <1-..>  [display#]\n\
-       -w 100000  [delay usecs between settings]\n\
-\
------ Basic settings -----\n\
-       -b <1-..>  [brightness]\n\
-       -c <1-..>  [contrast]\n\
-       -u <y|n|c> [blacklist on|off|create]\n\
-       -s <y|n>   [save-mode: read current value twice to be sure on|off]\n\
-\
------ Settings that don\'t always work -----\n\
-       -m <1|2>   [mute speaker OFF/ON]\n\
-       -v <1-254> [speaker volume]\n\
-       -i <1-12>  [select input source]\n\
-       -p <1|2-5> [power on | standby/off]\n\
-       -o         [read-only orientation]\n\
-\
------ Setting grammar -----\n\
-       -X ? (queries setting X)\n\
-       -X NN (setting X to NN)\n\
-       -X <NN>- (decreases setting X by NN)\n\
-       -X <NN>+ (increases setting X by NN)");
+            NSLog(@"%@", HelpString);
         }
     }
     return 0;
