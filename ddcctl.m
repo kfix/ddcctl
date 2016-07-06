@@ -85,7 +85,6 @@ int main(int argc, const char * argv[])
                                    @"c": @CONTRAST,
                                    @"d": @-1, //set_display consumed by app
                                    @"D": @-1, //dump_values consumed by app
-                                   @"w": @100000, //command_interval consumed by app
                                    @"p": @DPMS, //
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
@@ -121,9 +120,9 @@ int main(int argc, const char * argv[])
 
                 [argpairs enumerateKeysAndObjectsUsingBlock:^(id argname, NSString* argval, BOOL *stop) {
                     MyLog(@"D: command arg-pair: %@: %@", argname, argval);
-
+                    if ([switches valueForKey:argname] == nil) return;
                     NSInteger control_id = [[switches valueForKey:argname] intValue];
-                    if (control_id > -1){ //this is a valid monitor control from switches
+                    if (control_id > -1) { //this is a valid monitor control from switches
 
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; //look for relative setting ops
                         if (argval != argval_num) { //relative setting: read, calculate, then write
@@ -160,18 +159,18 @@ int main(int argc, const char * argv[])
             MyLog(@"Usage:\n\
  ddcctl -d <1-..> [display#]\n\
 	-w 100000 [delay usecs between settings]\n\
-
------ Basic settings -----
+\n\
+----- Basic settings -----\n\
 	-b <1-..> [brightness]\n\
 	-c <1-..> [contrast]\n\
-
------ Settings that don't always work -----
+\n\
+----- Settings that don't always work -----\n\
 	-m <1|2> [mute speaker OFF/ON]\n\
 	-v <1-254> [speaker volume]\n\
 	-i <1-12> [select input source]\n\
 	-p <1|2-5> [power on | standby/off]\n\
-
------ Setting grammar -----
+\n\
+----- Setting grammar -----\n\
  -X ? (queries setting X)\n\
  -X NN (setting X to NN)\n\
  -X <NN>- (decreases setting X by NN)\n\
