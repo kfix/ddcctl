@@ -27,14 +27,22 @@ Run `ddcctl -h` for some options.
 [ddcctl.sh](/ddcctl.sh) is a script I use to control two PC monitors plugged into my Mac Mini.  
 You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets.  
 
-Caveats
+Known Bugs / Caveats
 ----
-`ddcctl` makes blocking I2C ioctl's to the OSX kernel.  
+`ddcctl` gets a lot of bug reports for stuff that can't be remotely debugged or fixed.  
+Here are the three main issues I will close out-of-hand:  
+
+__YOUR PC MONITOR MAY SUCK AT DDC__  
+The DDC standard is very loosely implemented by monitor manufacturers beyond sleeping the display.  
+* This is because Windows doesn't use brightness sensors to dim screens like OSX does —via USB, not DDC!
+* Adjusting brightness, contrast, and super-awesome-multimedia-frobber-mode may not be possible.  
+
 __YOUR MAC MIGHT CRASH__ when `ddcctl` changes monitor settings.  
+`ddcctl` makes blocking I2C ioctl's to the OSX kernel.  
 * Don't file an issue if does, I can't debug OSX kernels and display drivers.  
 * And don't test this out with a bunch of unsaved work open.  
 
-__Your monitor itself might crash__ when making settings, especially the non-brightness/contrast ones.   
+__YOUR MONITOR MIGHT FREEZE__ when making settings, especially the non-brightness/contrast ones.   
 * Again, don't file an issue. Power cycle the monitor.  
 * You just have to trial-and-error what works for your hardware.  
 

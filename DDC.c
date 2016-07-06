@@ -150,10 +150,9 @@ bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
     data[1] = 0x84;
     data[2] = 0x03;
     data[3] = write->control_id;
-    data[4] = 0x64 ;
-    data[5] = write->new_value ;
-    data[6] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3]^ data[4]^
-    data[5];
+    data[4] = (write->new_value) >> 8;
+    data[5] = write->new_value & 255;
+    data[6] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3]^ data[4] ^ data[5];
 
 
     request.replyTransactionType    = kIOI2CNoTransactionType;

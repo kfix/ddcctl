@@ -88,7 +88,8 @@ int main(int argc, const char * argv[])
                                    @"p": @DPMS, //
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
-                                   @"s": @AUDIO_SPEAKER_VOLUME, //pg94
+                                   @"v": @AUDIO_SPEAKER_VOLUME, //pg94
+                                   @"o": @ORIENTATION,
                                    }; //should test against http://www.entechtaiwan.com/lib/softmccs.shtm
 
         NSUInteger command_interval = [[NSUserDefaults standardUserDefaults] integerForKey:@"w"];
@@ -159,17 +160,18 @@ int main(int argc, const char * argv[])
             MyLog(@"Usage:\n\
  ddcctl -d <1-..> [display#]\n\
 	-w 100000 [delay usecs between settings]\n\
-\n\
+\
 ----- Basic settings -----\n\
 	-b <1-..> [brightness]\n\
 	-c <1-..> [contrast]\n\
-\n\
------ Settings that don't always work -----\n\
+\
+----- Settings that don\'t always work -----\n\
 	-m <1|2> [mute speaker OFF/ON]\n\
 	-v <1-254> [speaker volume]\n\
 	-i <1-12> [select input source]\n\
 	-p <1|2-5> [power on | standby/off]\n\
-\n\
+    -o [read-only orientation]\n\
+\
 ----- Setting grammar -----\n\
  -X ? (queries setting X)\n\
  -X NN (setting X to NN)\n\
