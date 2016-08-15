@@ -14,4 +14,7 @@ install: ddcctl
 clean:
 	-rm *.o ddcctl
 
-.PHONY: all clean install
+displaylist:
+	ioreg -c IODisplayConnect -b -f -r -l -i
+
+.PHONY: all clean install displaylist
