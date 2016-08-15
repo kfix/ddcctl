@@ -30,7 +30,10 @@ You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets
 Known Bugs / Caveats
 ----
 `ddcctl` gets a lot of bug reports for stuff that can't be remotely debugged or fixed.  
-Here are the three main issues I will close out-of-hand:  
+Here are the four main issues I will close out-of-hand:  
+
+__MY HACKINTOSH <whatever>__:  
+You're on your own with that one.  
 
 __YOUR PC MONITOR MAY SUCK AT DDC__  
 The DDC standard is very loosely implemented by monitor manufacturers beyond sleeping the display.  
