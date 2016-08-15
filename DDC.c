@@ -14,55 +14,76 @@
 #define kDelayBase 100
 
 static io_service_t IOServicePortFromCGDisplayID(CGDirectDisplayID displayID)
+// iterate IOreg to find service port that corresponds to given CGDisplayID
 {
     io_iterator_t iter;
     io_service_t serv, servicePort = 0;
 
-    CFMutableDictionaryRef matching = IOServiceMatching("IODisplayConnect");
-
-    // releases matching for us
     kern_return_t err = IOServiceGetMatchingServices(kIOMasterPortDefault,
-                             matching,
-                             &iter);
-    if (err)
-    {
-        return 0;
-    }
+                        IOServiceMatching("IODisplayConnect"),
+                        &iter);
 
-    while ((serv = IOIteratorNext(iter)) != 0)
+    //if (err != kIOReturnSuccess)
+    if (err) // != KERN_SUCCESS)
+        return 0;
+
+    while ((serv = IOIteratorNext(iter)))
     {
         CFDictionaryRef info;
-        CFIndex vendorID, productID;
-        CFNumberRef vendorIDRef, productIDRef;
+        CFIndex vendorID, productID, serialNumber = 0;
+        CFNumberRef vendorIDRef, productIDRef, serialNumberRef;
+        CFStringRef location = CFSTR("");
+        //CFStringRef serial = CFSTR("");
         Boolean success;
 
+        // get metadata from IOreg node
         info = IODisplayCreateInfoDictionary(serv,
                              kIODisplayOnlyPreferredName);
-
-        vendorIDRef = CFDictionaryGetValue(info,
-                           CFSTR(kDisplayVendorID));
-        productIDRef = CFDictionaryGetValue(info,
-                            CFSTR(kDisplayProductID));
+/* When assigning a display ID, Quartz considers the following parameters:Vendor, Model, Serial Number and Position in the I/O Kit registry */
+        vendorIDRef = CFDictionaryGetValue(info, CFSTR(kDisplayVendorID));
+        productIDRef = CFDictionaryGetValue(info, CFSTR(kDisplayProductID));
+        serialNumberRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialNumber));
+        CFStringRef locationRef = CFDictionaryGetValue(info, CFSTR(kIODisplayLocationKey));
+        location = CFStringCreateCopy(NULL, locationRef);
+        //CFStringRef serialRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialString));
+        //serial = CFStringCreateCopy(NULL, serialRef);
+        // kDisplayBundleKey
+        // kAppleDisplayTypeKey -- if this is an Apple display, can use IODisplay func to change brightness: http://stackoverflow.com/a/32691700/3878712
+// http://opensource.apple.com//source/IOGraphics/IOGraphics-179.2/IOGraphicsFamily/IOKit/graphics/IOGraphicsTypes.h
 
         success = CFNumberGetValue(vendorIDRef, kCFNumberCFIndexType,
                                    &vendorID);
         success &= CFNumberGetValue(productIDRef, kCFNumberCFIndexType,
                                     &productID);
-
         if (!success)
         {
             CFRelease(info);
             continue;
         }
 
+        if(CFDictionaryGetValueIfPresent(info, CFSTR(kDisplaySerialNumber), (const void**)&serialNumberRef))
+        {
+             CFNumberGetValue(serialNumberRef, kCFNumberCFIndexType, &serialNumber);
+        }
+
+        // compare IOreg's metadata to CGDisplay's metadata to infer if the IOReg's I2C monitor is the display for the given NSScreen.displayID
         if (CGDisplayVendorNumber(displayID) != vendorID ||
-            CGDisplayModelNumber(displayID) != productID)
+            CGDisplayModelNumber(displayID) != productID ||
+            CGDisplaySerialNumber(displayID) != serialNumber ) // is zero in lots of cases, so duplicate-monitor rigs can get confused :-/
+            // || compare CGDisplayUnitNumber to IO location/iternum?
+/* The logical unit number represents a particular node in the I/O Kit device tree associated with the display’s framebuffer.
+For a particular hardware configuration, this value will not change when the attached monitor is changed. The number will change, though, if the I/O Kit device tree changes, for example, when hardware is reconfigured, drivers are replaced, or significant changes occur to I/O Kit. Therefore keep in mind that this number may vary across login sessions. */
+// ^ so unitnumber follows NSSpace>framebuffer>GPU and not actual monitors :-(
         {
             CFRelease(info);
             continue;
         }
 
         // we're a match
+        printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
+        printf(" UN:%d", CGDisplayUnitNumber(displayID));
+        //printf(" Serial:%s\n", CFStringGetCStringPtr(serial, kCFStringEncodingUTF8));
+        printf(" %s\n", CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
         servicePort = serv;
         CFRelease(info);
         break;
@@ -77,7 +98,7 @@ dispatch_semaphore_t DisplayQueue(CGDirectDisplayID displayID) {
     static struct DDCQueue {CGDirectDisplayID id; dispatch_semaphore_t queue;} *queues = NULL;
     dispatch_semaphore_t queue = NULL;
     if (!queues)
-        queues = calloc(50, sizeof(*queues));//FIXME: specify
+        queues = calloc(50, sizeof(*queues)); //FIXME: specify
     UInt64 i = 0;
     while (i < queueCount)
         if (queues[i].id == displayID)
@@ -96,13 +117,14 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
     dispatch_semaphore_wait(queue, DISPATCH_TIME_FOREVER);
     bool result = false;
     io_service_t framebuffer;
-    if ((framebuffer = CGDisplayIOServicePort(displayID))) { // FIXME: DEPRECATED!
-		// http://stackoverflow.com/questions/20025868/cgdisplayioserviceport-is-deprecated-in-os-x-10-9-how-to-replace
-		// http://stackoverflow.com/questions/24348142/cgdirectdisplayid-multiple-gpus-deprecated-cgdisplayioserviceport-and-uniquely
-	//if ((framebuffer = IOServicePortFromCGDisplayID(displayID))) { // https://github.com/glfw/glfw/pull/192/files
-	//^ doesn't work and wouldn't help with multiple identical monitors
+    //if ((framebuffer = CGDisplayIOServicePort(displayID))) {
+    // DEPRECATED! https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+    // http://stackoverflow.com/questions/20025868/cgdisplayioserviceport-is-deprecated-in-os-x-10-9-how-to-replace
+    // http://stackoverflow.com/questions/24348142/cgdirectdisplayid-multiple-gpus-deprecated-cgdisplayioserviceport-and-uniquely
+    if ((framebuffer = IOServicePortFromCGDisplayID(displayID))) { // https://github.com/glfw/glfw/pull/192/files
         IOItemCount busCount;
         if (IOFBGetI2CInterfaceCount(framebuffer, &busCount) == KERN_SUCCESS) {
+            // https://developer.apple.com/library/mac/documentation/IOKit/Reference/IOI2CInterface_iokit_header_reference/#//apple_ref/c/func/IOFBGetI2CInterfaceCount
             IOOptionBits bus = 0;
             while (bus < busCount) {
                 io_service_t interface;
@@ -164,7 +186,6 @@ bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
 }
 
 bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
-    kern_return_t kr;
     IOI2CRequest request;
     UInt8 reply_data[11] = {};
     bool result = false;
@@ -179,7 +200,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
     request.sendTransactionType             = kIOI2CSimpleTransactionType;
     request.sendBuffer                      = (vm_address_t) &data[0];
     request.sendBytes                       = 5;
-    request.minReplyDelay = kDelayBase;
+    request.minReplyDelay                   = 0;
 
     data[0] = 0x51;
     data[1] = 0x82;
