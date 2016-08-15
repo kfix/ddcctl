@@ -85,7 +85,6 @@ int main(int argc, const char * argv[])
                                    @"c": @CONTRAST,
                                    @"d": @-1, //set_display consumed by app
                                    @"D": @-1, //dump_values consumed by app
-                                   @"w": @100000, //command_interval consumed by app
                                    @"p": @DPMS, //
                                    @"i": @INPUT_SOURCE, //pg85
                                    @"m": @AUDIO_MUTE,
@@ -122,9 +121,9 @@ int main(int argc, const char * argv[])
 
                 [argpairs enumerateKeysAndObjectsUsingBlock:^(id argname, NSString* argval, BOOL *stop) {
                     MyLog(@"D: command arg-pair: %@: %@", argname, argval);
-
+                    if ([switches valueForKey:argname] == nil) return;
                     NSInteger control_id = [[switches valueForKey:argname] intValue];
-                    if (control_id > -1){ //this is a valid monitor control from switches
+                    if (control_id > -1) { //this is a valid monitor control from switches
 
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; //look for relative setting ops
                         if (argval != argval_num) { //relative setting: read, calculate, then write
