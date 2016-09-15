@@ -35,6 +35,11 @@ uint get_control(CGDirectDisplayID cdisplay, uint control_id)
    command.current_value = 0;
 
    MyLog(@"D: querying VCP control: #%u =?", command.control_id);
+
+	// Always read value twice to prevent stale values from being read
+	DDCRead(cdisplay, &command);
+	usleep(100 * kMicrosecondScale);
+
    if (!DDCRead(cdisplay, &command)){
        MyLog(@"E: DDC send command failed!");
        MyLog(@"E: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);

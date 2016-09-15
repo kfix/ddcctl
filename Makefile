@@ -14,7 +14,10 @@ install: ddcctl
 clean:
 	-rm *.o ddcctl
 
+framebuffers:
+	ioreg -c IOFramebuffer -k IOFBI2CInterfaceIDs -b -f -l -r -d 1
+
 displaylist:
-	ioreg -c IODisplayConnect -b -f -r -l -i
+	ioreg -c IODisplayConnect -b -f -r -l -i -d 2
 
 .PHONY: all clean install displaylist
