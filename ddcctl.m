@@ -9,9 +9,11 @@
 //
 
 //
-//  With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the app failed to read ddc and freezes my system.
+//  With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
 //
-//  This is why I added blacklist support:
+//  Since my last update, my system didn't freeze any more and reading data from my DELL is possible!
+//
+//  Blacklist support for problematic monitors:
 //  Now the app can use the user-defaults to hold the current brightness and contrast values.
 //  The settings were saved to ~/Library/Preferences/ddcctl.plist
 //  Here you can add your display by edid.name into the blacklist (needs a reboot).
@@ -23,9 +25,6 @@
 //  Tipp: Use 'Karabiner' to map some keyboard keys to 5- and 5+
 //  For me this works exelent with the brightness keys of my apple magic keyboard.
 //
-//  Since I set minReplyDelay to zero, my system didn't freeze any more
-//  But my Dell gives me old values at the first read so I add: save-mode
-//  In save-mode the app reads current value twice to be sure. Use '-s' to activate.
 //
 //  Now using argv[] instead off user-defaults to handle commandline arguments.
 //
@@ -49,7 +48,6 @@
 
 NSUserDefaults *defaults;
 int blacklistedDeviceWithNumber;
-bool useSaveMode;
 #ifdef OSD
 bool useOsd;
 #endif
@@ -88,11 +86,6 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
         
     } else {
         MyLog(@"D: querying VCP control: #%u =?", command.control_id);
-        
-        if (useSaveMode) {
-            DDCRead(cdisplay, &command);
-            usleep(100 * kMicrosecondScale);
-        }
         
         if (!DDCRead(cdisplay, &command)) {
             MyLog(@"E: DDC send command failed!");
@@ -208,7 +201,6 @@ int main(int argc, const char * argv[])
         @"\t-b <1-..>  [brightness]\n"
         @"\t-c <1-..>  [contrast]\n"
         @"\t-u <y|n|c> [blacklist on|off|create]\n"
-        @"\t-s         [save-mode: read current value twice to be sure]\n"
 #ifdef OSD
         @"\t-O         [osd: needs external app 'OSDisplay']\n"
 #endif
@@ -258,10 +250,6 @@ int main(int argc, const char * argv[])
                 i++;
                 if (i >= argc) break;
                 useDefaults = [[NSString alloc] initWithUTF8String:argv[i]];
-            }
-            
-            else if (!strcmp(argv[i], "-s")) {
-                useSaveMode = YES;
             }
             
             else if (!strcmp(argv[i], "-p")) {
