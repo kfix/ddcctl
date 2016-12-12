@@ -9,12 +9,13 @@
 //
 
 //
+//  Marc 2016:
 //  With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
 //
-//  Since my last update, my system didn't freeze any more and reading data from my DELL is possible!
+//  This version repairs this issue, my system didn't freeze any more and reading data from my DELL is possible!
 //
-//  Blacklist support for problematic monitors:
-//  Now the app can use the user-defaults to hold the current brightness and contrast values.
+//  Blacklist support for monitors that doesn't support correct data reading:
+//  The app can use the user-defaults to hold the current brightness and contrast values.
 //  The settings were saved to ~/Library/Preferences/ddcctl.plist
 //  Here you can add your display by edid.name into the blacklist (needs a reboot).
 //  Or just use the '-u y' switch to enable this feature.
@@ -22,14 +23,26 @@
 //  Simply adjust your display to 50 before you start the app the first time.
 //  From there, only use the app to adjust your display and you are fine.
 //
-//  Tipp: Use 'Karabiner' to map some keyboard keys to 5- and 5+
-//  For me this works exelent with the brightness keys of my apple magic keyboard.
+//  New command-line keys for using the blacklist:
+//  -u n  -> disable an active blacklist
+//  -u y  -> blacklist the current screen
+//  -u c  -> create/add current screen to blacklist
+//  -u r  -> remove current screen from blacklist
+//  -u d  -> delete blacklist key
+//
+//
+//  New command-line keys for testing (working with my DELL):
+//  -rg 1-100  -> red gain
+//  -gg 1-100  -> green gain
+//  -bg 1-100  -> blue gain
+//  -rrgb      -> reset color
+//  -rbc       -> reset brightness and contrast
 //
 //
 //  Now using argv[] instead off user-defaults to handle commandline arguments.
 //
 //  Added optional use of an external app 'OSDisplay' to have a BezelUI like OSD.
-//  Use '-O' to activate.
+//  Uncomment the define below and recompile. Then use '-O' to activate.
 //
 //  Have fun!
 //
@@ -200,6 +213,7 @@ int main(int argc, const char * argv[])
         @"----- Basic settings -----\n"
         @"\t-b <1-..>  [brightness]\n"
         @"\t-c <1-..>  [contrast]\n"
+        @"\t-rbc       [reset brightness and contrast]\n"
         @"\t-u <y|n|c> [blacklist on|off|create]\n"
 #ifdef OSD
         @"\t-O         [osd: needs external app 'OSDisplay']\n"
@@ -211,6 +225,12 @@ int main(int argc, const char * argv[])
         @"\t-i <1-12>  [select input source]\n"
         @"\t-p <1|2-5> [power on | standby/off]\n"
         @"\t-o         [read-only orientation]\n"
+        @"\n"
+        @"----- Settings (testing) -----\n"
+        @"\t-rg <1-..>  [red gain]\n"
+        @"\t-gg <1-..>  [green gain]\n"
+        @"\t-bg <1-..>  [blue gain]\n"
+        @"\t-rrbg       [reset color]\n"
         @"\n"
         @"----- Setting grammar -----\n"
         @"\t-X ?       (query value of setting X)\n"
@@ -240,6 +260,32 @@ int main(int argc, const char * argv[])
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@CONTRAST, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"c"];
+            }
+            
+            else if (!strcmp(argv[i], "-rbc")) {
+                [actions setObject:@[@RESET_BRIGHTNESS_AND_CONTRAST, @"1"] forKey:@"rbc"];
+            }
+            
+            else if (!strcmp(argv[i], "-rg")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@RED_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"rg"];
+            }
+            
+            else if (!strcmp(argv[i], "-gg")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@GREEN_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"gg"];
+            }
+            
+            else if (!strcmp(argv[i], "-bg")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@BLUE_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"bg"];
+            }
+            
+            else if (!strcmp(argv[i], "-rrgb")) {
+                [actions setObject:@[@RESET_COLOR, @"1"] forKey:@"rrgb"];
             }
             
             else if (!strcmp(argv[i], "-D")) {
@@ -329,50 +375,112 @@ int main(int argc, const char * argv[])
                     }
                 }
                 
+                // Blacklist
+                blacklistedDeviceWithNumber = 0;
+                defaults = [NSUserDefaults standardUserDefaults];
+
+                if (![useDefaults isEqualToString:@"n"]) {
+                    if ([defaults objectForKey:@"Blacklist"]) {
+                        MyLog(@"I: blacklist is active");
+                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
+                        {
+                            MyLog(@"I: searching for '%@'", screenName);
+                            if ([(NSString *)object isEqualToString:screenName]) {
+                                blacklistedDeviceWithNumber = displayId;
+                                MyLog(@"I: success - found '%@' in blacklist", screenName);
+                                MyLog(@"I: using user-defaults to store current value");
+                                break;
+                            }
+                        }
+                    }
+                    
+                    
+                    if ([useDefaults isEqualToString:@"y"]) {
+                        blacklistedDeviceWithNumber = displayId;
+                        MyLog(@"I: using user-defaults to store current value");
+                    }
+                    else if ([useDefaults isEqualToString:@"c"]) {
+                        blacklistedDeviceWithNumber = displayId;
+                        int needReload = 1;
+                        
+                        NSMutableArray *newBlacklist = [NSMutableArray array];
+                        
+                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
+                        {
+                            MyLog(@"I: searching for '%@'", screenName);
+                            if ([(NSString *)object isEqualToString:screenName]) {
+                                MyLog(@"I: found '%@' already in blacklist", screenName);
+                                needReload = 0;
+                                break;
+                            } else {
+                                [newBlacklist addObject:object];
+                            }
+                        }
+                        
+                        if (needReload) {
+                            MyLog(@"I: adding '%@' to blacklist", screenName);
+                            MyLog(@"I: now using user-defaults to store current value");
+                            [newBlacklist addObject:screenName];
+                            [defaults setObject:newBlacklist forKey:@"Blacklist"];
+                            [defaults synchronize];
+                        }
+                        
+                        newBlacklist = nil;
+                    }
+                    else if ([useDefaults isEqualToString:@"r"]) {
+                        blacklistedDeviceWithNumber = 0;
+                        int needReload = 0;
+                        
+                        NSMutableArray *newBlacklist = [NSMutableArray array];
+                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
+                        {
+                            MyLog(@"I: searching for '%@'", screenName);
+                            if ([(NSString *)object isEqualToString:screenName]) {
+                                MyLog(@"I: removing '%@' from blacklist", screenName);
+                                needReload = 1;
+                            } else {
+                                [newBlacklist addObject:object];
+                            }
+                        }
+                        
+                        if (needReload) {
+                            if ([newBlacklist count] > 0) {
+                                MyLog(@"I: reloading blacklist");
+                                [defaults setObject:newBlacklist forKey:@"Blacklist"];
+                            } else {
+                                MyLog(@"I: deleting blacklist");
+                                [defaults removeObjectForKey:@"Blacklist"];
+                            }
+                            [defaults synchronize];
+                        }
+                        
+                        newBlacklist = nil;
+                    }
+                    else if ([useDefaults isEqualToString:@"d"]) {
+                        blacklistedDeviceWithNumber = 0;
+                        MyLog(@"I: deleting blacklist");
+                        [defaults removeObjectForKey:@"Blacklist"];
+                        [defaults synchronize];
+                    }
+                }
+                
                 NSDictionary *defaultsDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                               [NSNumber numberWithInt:50], @"Brightness-1", [NSNumber numberWithInt:50], @"Contrast-1",
                                               [NSNumber numberWithInt:50], @"Brightness-2", [NSNumber numberWithInt:50], @"Contrast-2",
                                               [NSNumber numberWithInt:50], @"Brightness-3", [NSNumber numberWithInt:50], @"Contrast-3",
                                               [NSNumber numberWithInt:0],  @"MinValue",     [NSNumber numberWithInt:100], @"MaxValue",
-                                              [NSArray arrayWithObjects: @"DELL U2515H", @"My second Monitor", nil], @"Blacklist", nil];
-                defaults = [NSUserDefaults standardUserDefaults];
+                                              [NSArray arrayWithObjects: @"First Monitor", @"Second Monitor", nil], @"Blacklist", nil];
                 [defaults registerDefaults:defaultsDict];
-                
-                blacklistedDeviceWithNumber = 0;
-                
-                if ([useDefaults isEqualToString:@"n"]) {
-                    MyLog(@"D: blacklist is disabled");
-                }
-                else if ([useDefaults isEqualToString:@"y"]) {
-                    blacklistedDeviceWithNumber = displayId;
-                    MyLog(@"I: using user-defaults to store current value");
-                }
-                else if ([useDefaults isEqualToString:@"c"]) {
-                    blacklistedDeviceWithNumber = displayId;
-                    MyLog(@"I: creating blacklist with %@", screenName);
-                    MyLog(@"I: using user-defaults to store current value");
-                    [defaults setObject:[NSArray arrayWithObjects:screenName, nil] forKey:@"Blacklist"];
-                    [defaults synchronize];
-                }
-                else {
-                    for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
-                    {
-                        if ([(NSString *)object isEqualToString:screenName]) {
-                            blacklistedDeviceWithNumber = displayId;
-                            MyLog(@"I: found edid.name in blacklist");
-                            MyLog(@"I: using user-defaults to store current value");
-                            break;
-                        }
+
+                // Debugging
+                if (dump_values) {
+                    for (uint i=0x00; i<=255; i++) {
+                        getControl(cdisplay, i);
+                        usleep(command_interval);
                     }
                 }
-
-                if (dump_values) {
-                    for (uint i=0x00; i<=255; i++)
-                        getControl(cdisplay, i);
-                    //MyLog(@"I: Dumped %x = %d\n", i, getControl(cdisplay, i));
-                }
                 
-                
+                // Actions
                 [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
                     NSInteger control_id = [valueArray[0] intValue];
                     NSString *argval = valueArray[1];
@@ -384,7 +492,7 @@ int main(int argc, const char * argv[])
                         if (argval != argval_num) {
                             // relative setting: read, calculate, then write
                             NSString *formula = [NSString stringWithFormat:@"%u %@ %@",
-                                                 getControl(cdisplay, control_id),             // current
+                                                 getControl(cdisplay, control_id),              // current
                                                  [argval substringFromIndex:argval.length - 1], // OP
                                                  argval_num                                     // new
                                                  ];
