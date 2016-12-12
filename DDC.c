@@ -11,8 +11,8 @@
 #include <IOKit/graphics/IOGraphicsLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include "DDC.h"
-#define kDelayBase 100
-#define kMaxRequests 100
+
+#define kMaxRequests 10
 
 static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID)
 //  iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
@@ -132,15 +132,7 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
                 io_service_t interface;
                 if (IOFBCopyI2CInterfaceForBus(framebuffer, bus++, &interface) != KERN_SUCCESS)
                     continue;
-                CFNumberRef flags = NULL;
-                CFIndex flag;
-                if (request->minReplyDelay
-                    && (flags = IORegistryEntryCreateCFProperty(interface, CFSTR(kIOI2CSupportedCommFlagsKey), kCFAllocatorDefault, 0))
-                    && CFNumberGetValue(flags, kCFNumberCFIndexType, &flag)
-                    && flag == kIOI2CUseSubAddressCommFlag)
-                    request->minReplyDelay *= kMillisecondScale;
-                if (flags)
-                    CFRelease(flags);
+
                 IOI2CConnectRef connect;
                 if (IOI2CInterfaceOpen(interface, kNilOptions, &connect) == KERN_SUCCESS) {
                     result = (IOI2CSendRequest(connect, kNilOptions, request) == KERN_SUCCESS);
@@ -152,7 +144,7 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
         }
     }
     if (request->replyTransactionType == kIOI2CNoTransactionType)
-        usleep(kDelayBase * kMicrosecondScale);
+        usleep(20000);
     dispatch_semaphore_signal(queue);
     return result && request->result == KERN_SUCCESS;
 }
@@ -200,7 +192,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         request.sendTransactionType             = kIOI2CSimpleTransactionType;
         request.sendBuffer                      = (vm_address_t) &data[0];
         request.sendBytes                       = 5;
-        //request.minReplyDelay                   = kDelayBase;
+        request.minReplyDelay                   = 10;  // may differ, but this is working
         
         data[0] = 0x51;
         data[1] = 0x82;
@@ -219,11 +211,17 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         result = DisplayRequest(displayID, &request);
         result = (result && reply_data[0] == request.sendAddress && reply_data[2] == 0x2 && reply_data[4] == read->control_id && reply_data[10] == (request.replyAddress ^ request.replySubAddress ^ reply_data[1] ^ reply_data[2] ^ reply_data[3] ^ reply_data[4] ^ reply_data[5] ^ reply_data[6] ^ reply_data[7] ^ reply_data[8] ^ reply_data[9]));
     
-        if (result) {
-            printf("Tries required to get data: %d ", i);
-            printf("- Read address was %d  \n", reply_data[4]);
+        if (result) { // checksum is ok
+            if (i >= 1) {
+                printf("D: Tries required to get data: %d \n", i+1);
+            }
             break;
         }
+
+        if (request.result == kIOReturnUnsupportedMode)
+            printf("E: Unsupported Transaction Type! \n");
+        
+        usleep(40000); // 40msec -> See DDC/CI Vesa Standard - 4.4.1 Communication Error Recovery
     }
     read->max_value = reply_data[7];
     read->current_value = reply_data[9];
