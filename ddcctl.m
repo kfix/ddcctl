@@ -393,7 +393,6 @@ int main(int argc, const char * argv[])
                             
                             if (set_value.intValue >= [defaults integerForKey:@"MinValue"] && set_value.intValue <= [defaults integerForKey:@"MaxValue"]) {
                                 MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
-                                usleep(command_interval); // allow read to finish
                                 setControl(cdisplay, control_id, set_value.unsignedIntValue);
                             } else {
                                 MyLog(@"D: relative setting: %@ = %d is out of range!", formula, set_value.intValue);
