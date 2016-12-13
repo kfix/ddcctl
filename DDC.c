@@ -221,12 +221,12 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         if (request.result == kIOReturnUnsupportedMode)
             printf("E: Unsupported Transaction Type! \n");
         
-        // reset values and return an error if data reading fails
+        // reset values and return 0, if data reading fails
         if (i+1 >= kMaxRequests) {
             read->max_value = 0;
             read->current_value = 0;
             printf("E: No data after %d tries! \n", i+1);
-            return -1;
+            return 0;
         }
         
         usleep(40000); // 40msec -> See DDC/CI Vesa Standard - 4.4.1 Communication Error Recovery
