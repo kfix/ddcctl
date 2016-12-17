@@ -142,6 +142,7 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
                 if (result) break;
             }
         }
+        IOObjectRelease(framebuffer);
     }
     if (request->replyTransactionType == kIOI2CNoTransactionType)
         usleep(20000);
