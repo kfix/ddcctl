@@ -206,10 +206,10 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         data[2] = 0x01;
         data[3] = read->control_id;
         data[4] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3];
-#ifdef TT_DDC
-        request.replyTransactionType    = kIOI2CDDCciReplyTransactionType;
-#elif defined TT_SIMPLE
+#ifdef TT_SIMPLE
         request.replyTransactionType    = kIOI2CSimpleTransactionType;
+#elif defined TT_DDC
+        request.replyTransactionType    = kIOI2CDDCciReplyTransactionType;
 #else
         request.replyTransactionType    = SupportedTransactionType();
 #endif
