@@ -9,10 +9,12 @@
 //
 
 //
-//  Marc 2016:
+//  Marc (Saman-VDR) 2016:
 //  With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
-//
-//  This version repairs this issue, my system didn't freeze any more and reading data from my DELL is possible!
+//  This happens because AppleIntelFramebuffer do not support kIOI2CDDCciReplyTransactionType.
+//  So this version comes with a reworked ddc read function to detect the correct TransactionType.
+//  Kernel freezes were fixed by setting minReplyDelay to 10
+//  Now reading data from my DELL is possible!
 //
 //  Blacklist support for monitors that doesn't support correct data reading:
 //  The app can use the user-defaults to hold the current brightness and contrast values.
@@ -24,11 +26,11 @@
 //  From there, only use the app to adjust your display and you are fine.
 //
 //  New command-line keys for using the blacklist:
-//  -u n  -> disable an active blacklist
-//  -u y  -> blacklist the current screen
-//  -u c  -> create/add current screen to blacklist
-//  -u r  -> remove current screen from blacklist
-//  -u d  -> delete blacklist key
+//  -B n  -> disable an active blacklist
+//  -B y  -> blacklist the current screen
+//  -B c  -> create/add current screen to blacklist
+//  -B r  -> remove current screen from blacklist
+//  -B d  -> delete blacklist key
 //
 //
 //  New command-line keys for testing (working with my DELL):
@@ -42,12 +44,10 @@
 //  Now using argv[] instead off user-defaults to handle commandline arguments.
 //
 //  Added optional use of an external app 'OSDisplay' to have a BezelUI like OSD.
-//  Uncomment the define below and recompile. Then use '-O' to activate.
+//  Edit Makefile to define OSD, then recompile. Use '-O' as a command to activate.
 //
 //  Have fun!
 //
-
-//#define OSD
 
 #ifdef DEBUG
 #define MyLog NSLog
@@ -59,8 +59,10 @@
 #import <AppKit/NSScreen.h>
 #import "DDC.h"
 
+#ifdef BLACKLIST
 NSUserDefaults *defaults;
 int blacklistedDeviceWithNumber;
+#endif
 #ifdef OSD
 bool useOsd;
 #endif
@@ -78,7 +80,7 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
     command.control_id = control_id;
     command.max_value = 0;
     command.current_value = 0;
-    
+#ifdef BLACKLIST
     if (blacklistedDeviceWithNumber > 0) {
         MyLog(@"D: reading user-defaults");
         switch (control_id) {
@@ -98,6 +100,7 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
         MyLog(@"I: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);
         
     } else {
+#endif
         MyLog(@"D: querying VCP control: #%u =?", command.control_id);
         
         if (!DDCRead(cdisplay, &command)) {
@@ -106,8 +109,9 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
         } else {
             MyLog(@"I: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);
         }
+#ifdef BLACKLIST
     }
-    
+#endif
     return command.current_value;
 }
 
@@ -122,6 +126,7 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
     if (!DDCWrite(cdisplay, &command)){
         MyLog(@"E: Failed to send DDC command!");
     }
+#ifdef BLACKLIST
     else if (blacklistedDeviceWithNumber > 0) {
         // DDCWrite success and device was found in blacklist
         // so we save new value for the device number to user-defaults
@@ -139,6 +144,7 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
         }
         [defaults synchronize];
     }
+#endif
 #ifdef OSD
     if (useOsd) {
         NSString *OSDisplay = @"/Applications/OSDisplay.app/Contents/MacOS/OSDisplay";
@@ -204,7 +210,9 @@ int main(int argc, const char * argv[])
         NSUInteger displayId = -1;
         NSUInteger command_interval = 100000;
         BOOL dump_values = NO;
+#ifdef BLACKLIST
         NSString *useDefaults = @"";
+#endif
         
         NSString *HelpString = @"Usage:\n"
         @"ddcctl \t-d <1-..>  [display#]\n"
@@ -214,7 +222,9 @@ int main(int argc, const char * argv[])
         @"\t-b <1-..>  [brightness]\n"
         @"\t-c <1-..>  [contrast]\n"
         @"\t-rbc       [reset brightness and contrast]\n"
-        @"\t-u <y|n|c> [blacklist on|off|create]\n"
+#ifdef BLACKLIST
+        @"\t-B <y|n|c> [blacklist on|off|create]\n"
+#endif
 #ifdef OSD
         @"\t-O         [osd: needs external app 'OSDisplay']\n"
 #endif
@@ -291,13 +301,13 @@ int main(int argc, const char * argv[])
             else if (!strcmp(argv[i], "-D")) {
                 dump_values = YES;
             }
-            
-            else if (!strcmp(argv[i], "-u")) {
+#ifdef BLACKLIST
+            else if (!strcmp(argv[i], "-B")) {
                 i++;
                 if (i >= argc) break;
                 useDefaults = [[NSString alloc] initWithUTF8String:argv[i]];
             }
-            
+#endif
             else if (!strcmp(argv[i], "-p")) {
                 i++;
                 if (i >= argc) break;
@@ -340,7 +350,7 @@ int main(int argc, const char * argv[])
             }
 #endif
             else if (!strcmp(argv[i], "-h")) {
-                NSLog(@"ddctl 0.1 - %@", HelpString);
+                NSLog(@"ddcctl 0.1x - %@", HelpString);
                 return 0;
             }
             
@@ -374,7 +384,7 @@ int main(int argc, const char * argv[])
                             break;
                     }
                 }
-                
+#ifdef BLACKLIST
                 // Blacklist
                 blacklistedDeviceWithNumber = 0;
                 defaults = [NSUserDefaults standardUserDefaults];
@@ -465,13 +475,13 @@ int main(int argc, const char * argv[])
                 }
                 
                 NSDictionary *defaultsDict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                              [NSNumber numberWithInt:50], @"Brightness-1", [NSNumber numberWithInt:50], @"Contrast-1",
-                                              [NSNumber numberWithInt:50], @"Brightness-2", [NSNumber numberWithInt:50], @"Contrast-2",
-                                              [NSNumber numberWithInt:50], @"Brightness-3", [NSNumber numberWithInt:50], @"Contrast-3",
+                                              [NSNumber numberWithInt:50], @"Brightness-1", [NSNumber numberWithInt:50],  @"Contrast-1",
+                                              [NSNumber numberWithInt:50], @"Brightness-2", [NSNumber numberWithInt:50],  @"Contrast-2",
+                                              [NSNumber numberWithInt:50], @"Brightness-3", [NSNumber numberWithInt:50],  @"Contrast-3",
                                               [NSNumber numberWithInt:0],  @"MinValue",     [NSNumber numberWithInt:100], @"MaxValue",
                                               [NSArray arrayWithObjects: @"First Monitor", @"Second Monitor", nil], @"Blacklist", nil];
                 [defaults registerDefaults:defaultsDict];
-
+#endif
                 // Debugging
                 if (dump_values) {
                     for (uint i=0x00; i<=255; i++) {
@@ -498,8 +508,11 @@ int main(int argc, const char * argv[])
                                                  ];
                             NSExpression *exp = [NSExpression expressionWithFormat:formula];
                             NSNumber *set_value = [exp expressionValueWithObject:nil context:nil];
-                            
+#ifdef BLACKLIST
                             if (set_value.intValue >= [defaults integerForKey:@"MinValue"] && set_value.intValue <= [defaults integerForKey:@"MaxValue"]) {
+#else
+                            if (set_value.intValue >= 0 && set_value.intValue <= 100) {
+#endif
                                 MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
                                 setControl(cdisplay, control_id, set_value.unsignedIntValue);
                             } else {

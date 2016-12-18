@@ -14,17 +14,19 @@
 
 #define kMaxRequests 10
 
+/*
+ IOFramebufferPortFromCGDisplayID based on: https://github.com/kfix/ddcctl/commit/0d66010890f99aa0972bb1478b41dda6329f52b4
+ 
+ Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
+ replaces CGDisplayIOServicePort: https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+ based on: https://github.com/glfw/glfw/pull/192/files
+ */
 static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID)
-//  iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
-//  replaces CGDisplayIOServicePort: https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
-//  based on: https://github.com/glfw/glfw/pull/192/files
 {
     io_iterator_t iter;
     io_service_t serv, servicePort = 0;
     
-    kern_return_t err = IOServiceGetMatchingServices( kIOMasterPortDefault,
-                                                     IOServiceMatching(IOFRAMEBUFFER_CONFORMSTO), // IOFramebufferI2CInterface
-                                                     &iter);
+    kern_return_t err = IOServiceGetMatchingServices(kIOMasterPortDefault, IOServiceMatching(IOFRAMEBUFFER_CONFORMSTO), &iter);
     
     if (err != KERN_SUCCESS)
         return 0;
@@ -36,21 +38,24 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         io_name_t	name;
         CFIndex vendorID, productID, serialNumber = 0;
         CFNumberRef vendorIDRef, productIDRef, serialNumberRef;
+#ifdef DEBUG
         CFStringRef location = CFSTR("");
-        //CFStringRef serial = CFSTR("");
+        CFStringRef serial = CFSTR("");
+#endif
         Boolean success = 0;
         
         // get metadata from IOreg node
         IORegistryEntryGetName(serv, name);
         info = IODisplayCreateInfoDictionary(serv, kIODisplayOnlyPreferredName);
         
+#ifdef DEBUG
         /* When assigning a display ID, Quartz considers the following parameters:Vendor, Model, Serial Number and Position in the I/O Kit registry */
         // http://opensource.apple.com//source/IOGraphics/IOGraphics-179.2/IOGraphicsFamily/IOKit/graphics/IOGraphicsTypes.h
         CFStringRef locationRef = CFDictionaryGetValue(info, CFSTR(kIODisplayLocationKey));
-        location = CFStringCreateCopy(NULL, locationRef);
-        //CFStringRef serialRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialString));
-        //serial = CFStringCreateCopy(NULL, serialRef);
-        
+        if (locationRef) location = CFStringCreateCopy(NULL, locationRef);
+        CFStringRef serialRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialString));
+        if (serialRef) serial = CFStringCreateCopy(NULL, serialRef);
+#endif
         if (CFDictionaryGetValueIfPresent(info, CFSTR(kDisplayVendorID), (const void**)&vendorIDRef))
             success = CFNumberGetValue(vendorIDRef, kCFNumberCFIndexType, &vendorID);
         
@@ -76,20 +81,22 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
             CFNumberGetValue(serialNumberRef, kCFNumberCFIndexType, &serialNumber);
         
         // compare IOreg's metadata to CGDisplay's metadata to infer if the IOReg's I2C monitor is the display for the given NSScreen.displayID
-        if (CGDisplayVendorNumber(displayID) != vendorID ||
-            CGDisplayModelNumber(displayID) != productID ||
-            CGDisplaySerialNumber(displayID) != serialNumber ) // SN is zero in lots of cases, so duplicate-monitors can confuse us :-/
+        if (CGDisplayVendorNumber(displayID) != vendorID  ||
+            CGDisplayModelNumber(displayID)  != productID ||
+            CGDisplaySerialNumber(displayID) != serialNumber) // SN is zero in lots of cases, so duplicate-monitors can confuse us :-/
         {
             CFRelease(info);
             continue;
         }
-        
+#ifdef DEBUG
         // considering this IOFramebuffer as the match for the CGDisplay, dump out its information
-//        printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
-//        printf(" UN:%d", CGDisplayUnitNumber(displayID));
-//        printf(" IN:%d", iter);
-        //printf(" Serial:%s\n", CFStringGetCStringPtr(serial, kCFStringEncodingUTF8));
-//        printf(" %s %s\n", name, CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
+        printf("\nFramebuffer: %s\n", name);
+        printf("%s\n", CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
+        printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
+        printf(" UN:%d", CGDisplayUnitNumber(displayID));
+        printf(" IN:%d", iter);
+        printf(" Serial:%s\n\n", CFStringGetCStringPtr(serial, kCFStringEncodingUTF8));
+#endif
         servicePort = serv;
         CFRelease(info);
         break;
@@ -174,7 +181,6 @@ bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
     request.replyTransactionType            = kIOI2CNoTransactionType;
     request.replyBytes                      = 0;
 
-
     bool result = DisplayRequest(displayID, &request);
     return result;
 }
@@ -185,7 +191,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
     bool result = false;
     UInt8 data[128];
 
-    for (int i=0; i<kMaxRequests; i++) {
+    for (int i=1; i<=kMaxRequests; i++) {
         bzero(&request, sizeof(request));
         
         request.commFlags                       = 0;   
@@ -200,9 +206,13 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         data[2] = 0x01;
         data[3] = read->control_id;
         data[4] = 0x6E ^ data[0] ^ data[1] ^ data[2] ^ data[3];
-        
-        //request.replyTransactionType    = kIOI2CDDCciReplyTransactionType;
+#ifdef TT_DDC
+        request.replyTransactionType    = kIOI2CDDCciReplyTransactionType;
+#elif defined TT_SIMPLE
         request.replyTransactionType    = kIOI2CSimpleTransactionType;
+#else
+        request.replyTransactionType    = SupportedTransactionType();
+#endif
         request.replyAddress            = 0x6F;
         request.replySubAddress         = 0x51;
         
@@ -213,8 +223,8 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         result = (result && reply_data[0] == request.sendAddress && reply_data[2] == 0x2 && reply_data[4] == read->control_id && reply_data[10] == (request.replyAddress ^ request.replySubAddress ^ reply_data[1] ^ reply_data[2] ^ reply_data[3] ^ reply_data[4] ^ reply_data[5] ^ reply_data[6] ^ reply_data[7] ^ reply_data[8] ^ reply_data[9]));
     
         if (result) { // checksum is ok
-            if (i >= 1) {
-                printf("D: Tries required to get data: %d \n", i+1);
+            if (i > 1) {
+                printf("D: Tries required to get data: %d \n", i);
             }
             break;
         }
@@ -223,10 +233,10 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
             printf("E: Unsupported Transaction Type! \n");
         
         // reset values and return 0, if data reading fails
-        if (i+1 >= kMaxRequests) {
+        if (i >= kMaxRequests) {
             read->max_value = 0;
             read->current_value = 0;
-            printf("E: No data after %d tries! \n", i+1);
+            printf("E: No data after %d tries! \n", i);
             return 0;
         }
         
@@ -236,6 +246,106 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
     read->current_value = reply_data[9];
     return result;
 }
+
+int SupportedTransactionType() {
+    kern_return_t   kr;
+    io_iterator_t   io_objects;
+    io_service_t    io_service;
+    
+    kr = IOServiceGetMatchingServices(kIOMasterPortDefault,
+                                      IOServiceNameMatching("IOFramebufferI2CInterface"), &io_objects);
+    
+    if (kr != KERN_SUCCESS) {
+        printf("E: Fatal - No matching service! \n");
+        return 0;
+    }
+    
+    UInt64 supportedType = 0;
+    
+    while((io_service = IOIteratorNext(io_objects)) != MACH_PORT_NULL)
+    {
+        CFMutableDictionaryRef service_properties;
+        CFIndex types = 0;
+        CFNumberRef typesRef;
+        
+        kr = IORegistryEntryCreateCFProperties(io_service, &service_properties, kCFAllocatorDefault, kNilOptions);
+        if (kr == KERN_SUCCESS)
+        {
+            if (CFDictionaryGetValueIfPresent(service_properties, CFSTR(kIOI2CTransactionTypesKey), (const void**)&typesRef))
+                CFNumberGetValue(typesRef, kCFNumberCFIndexType, &types);
+            
+            /*
+             We want DDCciReply but Simple is better than No-thing.
+             Combined and DisplayPortNative are not useful in our case.
+             */
+            if (types) {
+#ifdef DEBUG
+                printf("\nD: IOI2CTransactionTypes: 0x%02lx (%ld)\n", types, types);
+                
+                // kIOI2CNoTransactionType = 0
+                if ( 0 == ((1 << kIOI2CNoTransactionType) & (UInt64)types)) {
+                    printf("E: IOI2CNoTransactionType                   unsupported \n");
+                } else {
+                    printf("D: IOI2CNoTransactionType                   supported \n");
+                    supportedType = kIOI2CNoTransactionType;
+                }
+
+                // kIOI2CSimpleTransactionType = 1
+                if ( 0 == ((1 << kIOI2CSimpleTransactionType) & (UInt64)types)) {
+                    printf("E: IOI2CSimpleTransactionType               unsupported \n");
+                } else {
+                    printf("D: IOI2CSimpleTransactionType               supported \n");
+                    supportedType = kIOI2CSimpleTransactionType;
+                }
+                
+                // kIOI2CDDCciReplyTransactionType = 2
+                if ( 0 == ((1 << kIOI2CDDCciReplyTransactionType) & (UInt64)types)) {
+                    printf("E: IOI2CDDCciReplyTransactionType           unsupported \n");
+                } else {
+                    printf("D: IOI2CDDCciReplyTransactionType           supported \n");
+                    supportedType = kIOI2CDDCciReplyTransactionType;
+                }
+
+                // kIOI2CCombinedTransactionType = 3
+                if ( 0 == ((1 << kIOI2CCombinedTransactionType) & (UInt64)types)) {
+                    printf("E: IOI2CCombinedTransactionType             unsupported \n");
+                } else {
+                    printf("D: IOI2CCombinedTransactionType             supported \n");
+                    //supportedType = kIOI2CCombinedTransactionType;
+                }
+                
+                // kIOI2CDisplayPortNativeTransactionType = 4
+                if ( 0 == ((1 << kIOI2CDisplayPortNativeTransactionType) & (UInt64)types)) {
+                    printf("E: IOI2CDisplayPortNativeTransactionType    unsupported\n");
+                } else {
+                    printf("D: IOI2CDisplayPortNativeTransactionType    supported \n");
+                    //supportedType = kIOI2CDisplayPortNativeTransactionType;
+                }
+#else
+                // kIOI2CSimpleTransactionType = 1
+                if ( 0 != ((1 << kIOI2CSimpleTransactionType) & (UInt64)types)) {
+                    supportedType = kIOI2CSimpleTransactionType;
+                }
+                
+                // kIOI2CDDCciReplyTransactionType = 2
+                if ( 0 != ((1 << kIOI2CDDCciReplyTransactionType) & (UInt64)types)) {
+                    supportedType = kIOI2CDDCciReplyTransactionType;
+                }
+#endif
+            } else printf("E: Fatal - No supported Transaction Types! \n");
+            
+            CFRelease(service_properties);
+        }
+
+        IOObjectRelease(io_service);
+        
+        // Mac OS offers three framebuffer devices, but we can leave here
+        if (supportedType > 0) return supportedType;
+    }
+    
+    return supportedType;
+}
+
 
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid) {
     IOI2CRequest request = {};

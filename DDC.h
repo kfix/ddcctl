@@ -13,6 +13,8 @@
 
 #include <IOKit/i2c/IOI2CInterface.h>
 
+//#define DEBUG
+
 #define RESET 0x04
 #define RESET_BRIGHTNESS_AND_CONTRAST 0x05
 #define RESET_GEOMETRY 0x06
@@ -245,5 +247,7 @@ struct EDID {
 bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write);
 bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read);
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid);
+
+int SupportedTransactionType();
 
 #endif
