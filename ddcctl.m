@@ -314,11 +314,31 @@ int main(int argc, const char * argv[])
                 [actions setObject:@[@DPMS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"p"];
             }
             
-            else if (!strcmp(argv[i], "-o")) {
-                i++;
-                if (i >= argc) break;
+            else if (!strcmp(argv[i], "-o")) { // read only
+                //i++;
+                //if (i >= argc) break;
                 //[actions setObject:@[@ORIENTATION, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"o"];
                 [actions setObject:@[@ORIENTATION, @"?"] forKey:@"o"];
+            }
+            
+            else if (!strcmp(argv[i], "-osd")) { // read only returns '1' (OSD closed) or '2' (OSD active)
+                //i++;
+                //if (i >= argc) break;
+                //[actions setObject:@[@ON_SCREEN_DISPLAY, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"osd"];
+                [actions setObject:@[@ON_SCREEN_DISPLAY, @"?"] forKey:@"osd"];
+            }
+            
+            else if (!strcmp(argv[i], "-lang")) { // read only
+                //i++;
+                //if (i >= argc) break;
+                //[actions setObject:@[@OSD_LANGUAGE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"lang"];
+                [actions setObject:@[@OSD_LANGUAGE, @"?"] forKey:@"lang"];
+            }
+
+            else if (!strcmp(argv[i], "-cp")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@COLOR_PRESET, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"cp"];
             }
             
             else if (!strcmp(argv[i], "-i")) {
