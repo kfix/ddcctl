@@ -67,6 +67,7 @@ int blacklistedDeviceWithNumber;
 bool useOsd;
 #endif
 
+
 NSString *EDIDString(char *string)
 {
     NSString *temp = [[NSString alloc] initWithBytes:string length:13 encoding:NSASCIIStringEncoding];
@@ -97,7 +98,7 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
             default:
                 break;
         }
-        MyLog(@"I: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);
+        MyLog(@"I: VCP control #%u (0x%02lx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
         
     } else {
 #endif
@@ -105,9 +106,9 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
         
         if (!DDCRead(cdisplay, &command)) {
             MyLog(@"E: DDC send command failed!");
-            MyLog(@"E: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);
+            MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
         } else {
-            MyLog(@"I: VCP control #%u = current: %u, max: %u", command.control_id, command.current_value, command.max_value);
+            MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
         }
 #ifdef BLACKLIST
     }
@@ -168,6 +169,62 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
         }
     }
 #endif
+}
+
+/* Get current value to Set relative value for control from display */
+void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_value, NSString *operator)
+{
+    struct DDCReadCommand command;
+    command.control_id = control_id;
+    command.max_value = 0;
+    command.current_value = 0;
+    
+    // read
+#ifdef BLACKLIST
+    if (blacklistedDeviceWithNumber > 0) {
+        MyLog(@"D: reading user-defaults");
+        switch (control_id) {
+            case 16:
+                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Brightness-%u", blacklistedDeviceWithNumber]];
+                command.max_value = [defaults integerForKey:@"MaxValue"];
+                break;
+                
+            case 18:
+                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Contrast-%u", blacklistedDeviceWithNumber]];
+                command.max_value = [defaults integerForKey:@"MaxValue"];
+                break;
+                
+            default:
+                break;
+        }
+        MyLog(@"I: VCP control #%u (0x%02lx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
+        
+    } else {
+#endif
+        MyLog(@"D: querying VCP control: #%u =?", command.control_id);
+        
+        if (!DDCRead(cdisplay, &command)) {
+            MyLog(@"E: DDC send command failed!");
+            MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
+        } else {
+            MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
+        }
+#ifdef BLACKLIST
+    }
+#endif
+
+    // calculate
+    NSString *formula = [NSString stringWithFormat:@"%u %@ %@", command.current_value, operator, new_value];
+    NSExpression *exp = [NSExpression expressionWithFormat:formula];
+    NSNumber *set_value = [exp expressionValueWithObject:nil context:nil];
+
+    // validate and write
+    if (set_value.intValue >= 0 && set_value.intValue <= command.max_value) {
+        MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
+        setControl(cdisplay, control_id, set_value.unsignedIntValue);
+    } else {
+        MyLog(@"D: relative setting: %@ = %d is out of range!", formula, set_value.intValue);
+    }
 }
 
 /* Main function */
@@ -315,30 +372,37 @@ int main(int argc, const char * argv[])
             }
             
             else if (!strcmp(argv[i], "-o")) { // read only
-                //i++;
-                //if (i >= argc) break;
-                //[actions setObject:@[@ORIENTATION, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"o"];
                 [actions setObject:@[@ORIENTATION, @"?"] forKey:@"o"];
             }
             
-            else if (!strcmp(argv[i], "-osd")) { // read only returns '1' (OSD closed) or '2' (OSD active)
-                //i++;
-                //if (i >= argc) break;
-                //[actions setObject:@[@ON_SCREEN_DISPLAY, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"osd"];
+            else if (!strcmp(argv[i], "-osd")) { // read only - returns '1' (OSD closed) or '2' (OSD active)
                 [actions setObject:@[@ON_SCREEN_DISPLAY, @"?"] forKey:@"osd"];
             }
             
             else if (!strcmp(argv[i], "-lang")) { // read only
-                //i++;
-                //if (i >= argc) break;
-                //[actions setObject:@[@OSD_LANGUAGE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"lang"];
                 [actions setObject:@[@OSD_LANGUAGE, @"?"] forKey:@"lang"];
             }
-
-            else if (!strcmp(argv[i], "-cp")) {
+            
+            else if (!strcmp(argv[i], "-reset")) {
+                [actions setObject:@[@RESET, @"1"] forKey:@"reset"];
+            }
+            
+            else if (!strcmp(argv[i], "-preset_a")) {
                 i++;
                 if (i >= argc) break;
-                [actions setObject:@[@COLOR_PRESET, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"cp"];
+                [actions setObject:@[@COLOR_PRESET_A, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_a"];
+            }
+            
+            else if (!strcmp(argv[i], "-preset_b")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@COLOR_PRESET_B, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_b"];
+            }
+            
+            else if (!strcmp(argv[i], "-preset_c")) {
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[@COLOR_PRESET_C, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_c"];
             }
             
             else if (!strcmp(argv[i], "-i")) {
@@ -367,6 +431,17 @@ int main(int argc, const char * argv[])
 #ifdef OSD
             else if (!strcmp(argv[i], "-O")) {
                 useOsd = YES;
+            }
+#endif
+#ifdef TEST
+            else if (!strcmp(argv[i], "-test")) {
+                i++;
+                if (i >= argc) break;
+                NSString *test = [[NSString alloc] initWithUTF8String:argv[i]];
+                i++;
+                if (i >= argc) break;
+                [actions setObject:@[test, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"test"];
+                NSLog(@"TEST: %@  %@", test, [[NSString alloc] initWithUTF8String:argv[i]]);
             }
 #endif
             else if (!strcmp(argv[i], "-h")) {
@@ -521,24 +596,7 @@ int main(int argc, const char * argv[])
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
                         if (argval != argval_num) {
                             // relative setting: read, calculate, then write
-                            NSString *formula = [NSString stringWithFormat:@"%u %@ %@",
-                                                 getControl(cdisplay, control_id),              // current
-                                                 [argval substringFromIndex:argval.length - 1], // OP
-                                                 argval_num                                     // new
-                                                 ];
-                            NSExpression *exp = [NSExpression expressionWithFormat:formula];
-                            NSNumber *set_value = [exp expressionValueWithObject:nil context:nil];
-#ifdef BLACKLIST
-                            if (set_value.intValue >= [defaults integerForKey:@"MinValue"] && set_value.intValue <= [defaults integerForKey:@"MaxValue"]) {
-#else
-                            if (set_value.intValue >= 0 && set_value.intValue <= 100) {
-#endif
-                                MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
-                                setControl(cdisplay, control_id, set_value.unsignedIntValue);
-                            } else {
-                                MyLog(@"D: relative setting: %@ = %d is out of range!", formula, set_value.intValue);
-                            }
-                            
+                            getSetControl(cdisplay, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
                         } else if ([argval hasPrefix:@"?"]) {
                             // read current setting
                             getControl(cdisplay, control_id);
