@@ -9,12 +9,12 @@ And *possibly* (if your monitor firmware is well implemented):
 * built-in speaker volume  
 * on/off/standby 
 * rgb colors
+* color presets
 * reset 
 
 This is ddcctl 0.1x ;) 
 * rework of ddc read function to detect the correct TransactionType 
 * this feature is adaptable - see Makefile for detailed information 
-* optional blacklist support (read/write values to/from user-defaults) 
 * new command-line keys for rgb colors 
 * new command-line keys for reset brightness and contrast or colors 
 * some more ... 

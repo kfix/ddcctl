@@ -16,22 +16,6 @@
 //  Kernel freezes were fixed by setting minReplyDelay to 10
 //  Now reading data from my DELL is possible!
 //
-//  Blacklist support for monitors that doesn't support correct data reading:
-//  The app can use the user-defaults to hold the current brightness and contrast values.
-//  The settings were saved to ~/Library/Preferences/ddcctl.plist
-//  Here you can add your display by edid.name into the blacklist (needs a reboot).
-//  Or just use the '-u y' switch to enable this feature.
-//  Display 1, 2 and 3 have predefined values of 50 so 'calibrating' is easy.
-//  Simply adjust your display to 50 before you start the app the first time.
-//  From there, only use the app to adjust your display and you are fine.
-//
-//  New command-line keys for using the blacklist:
-//  -B n  -> disable an active blacklist
-//  -B y  -> blacklist the current screen
-//  -B c  -> create/add current screen to blacklist
-//  -B r  -> remove current screen from blacklist
-//  -B d  -> delete blacklist key
-//
 //
 //  New command-line keys for testing (working with my DELL):
 //  -rg 1-100  -> red gain
@@ -81,38 +65,14 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
     command.control_id = control_id;
     command.max_value = 0;
     command.current_value = 0;
-#ifdef BLACKLIST
-    if (blacklistedDeviceWithNumber > 0) {
-        MyLog(@"D: reading user-defaults");
-        switch (control_id) {
-            case 16:
-                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Brightness-%u", blacklistedDeviceWithNumber]];
-                command.max_value = [defaults integerForKey:@"MaxValue"];
-                break;
-                
-            case 18:
-                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Contrast-%u", blacklistedDeviceWithNumber]];
-                command.max_value = [defaults integerForKey:@"MaxValue"];
-                break;
-                
-            default:
-                break;
-        }
-        MyLog(@"I: VCP control #%u (0x%02lx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        
+    MyLog(@"D: querying VCP control: #%u =?", command.control_id);
+    
+    if (!DDCRead(cdisplay, &command)) {
+        MyLog(@"E: DDC send command failed!");
+        MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     } else {
-#endif
-        MyLog(@"D: querying VCP control: #%u =?", command.control_id);
-        
-        if (!DDCRead(cdisplay, &command)) {
-            MyLog(@"E: DDC send command failed!");
-            MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        } else {
-            MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        }
-#ifdef BLACKLIST
+        MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     }
-#endif
     return command.current_value;
 }
 
@@ -127,25 +87,6 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
     if (!DDCWrite(cdisplay, &command)){
         MyLog(@"E: Failed to send DDC command!");
     }
-#ifdef BLACKLIST
-    else if (blacklistedDeviceWithNumber > 0) {
-        // DDCWrite success and device was found in blacklist
-        // so we save new value for the device number to user-defaults
-        switch (control_id) {
-            case 16:
-                [defaults setInteger:new_value forKey:[NSString stringWithFormat:@"Brightness-%u", blacklistedDeviceWithNumber]];
-                break;
-                
-            case 18:
-                [defaults setInteger:new_value forKey:[NSString stringWithFormat:@"Contrast-%u", blacklistedDeviceWithNumber]];
-                break;
-                
-            default:
-                break;
-        }
-        [defaults synchronize];
-    }
-#endif
 #ifdef OSD
     if (useOsd) {
         NSString *OSDisplay = @"/Applications/OSDisplay.app/Contents/MacOS/OSDisplay";
@@ -180,39 +121,15 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
     command.current_value = 0;
     
     // read
-#ifdef BLACKLIST
-    if (blacklistedDeviceWithNumber > 0) {
-        MyLog(@"D: reading user-defaults");
-        switch (control_id) {
-            case 16:
-                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Brightness-%u", blacklistedDeviceWithNumber]];
-                command.max_value = [defaults integerForKey:@"MaxValue"];
-                break;
-                
-            case 18:
-                command.current_value = [defaults integerForKey:[NSString stringWithFormat:@"Contrast-%u", blacklistedDeviceWithNumber]];
-                command.max_value = [defaults integerForKey:@"MaxValue"];
-                break;
-                
-            default:
-                break;
-        }
-        MyLog(@"I: VCP control #%u (0x%02lx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        
+    MyLog(@"D: querying VCP control: #%u =?", command.control_id);
+    
+    if (!DDCRead(cdisplay, &command)) {
+        MyLog(@"E: DDC send command failed!");
+        MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     } else {
-#endif
-        MyLog(@"D: querying VCP control: #%u =?", command.control_id);
-        
-        if (!DDCRead(cdisplay, &command)) {
-            MyLog(@"E: DDC send command failed!");
-            MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        } else {
-            MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
-        }
-#ifdef BLACKLIST
+        MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     }
-#endif
-
+    
     // calculate
     NSString *formula = [NSString stringWithFormat:@"%u %@ %@", command.current_value, operator, new_value];
     NSExpression *exp = [NSExpression expressionWithFormat:formula];
@@ -267,9 +184,6 @@ int main(int argc, const char * argv[])
         NSUInteger displayId = -1;
         NSUInteger command_interval = 100000;
         BOOL dump_values = NO;
-#ifdef BLACKLIST
-        NSString *useDefaults = @"";
-#endif
         
         NSString *HelpString = @"Usage:\n"
         @"ddcctl \t-d <1-..>  [display#]\n"
@@ -279,9 +193,6 @@ int main(int argc, const char * argv[])
         @"\t-b <1-..>  [brightness]\n"
         @"\t-c <1-..>  [contrast]\n"
         @"\t-rbc       [reset brightness and contrast]\n"
-#ifdef BLACKLIST
-        @"\t-B <y|n|c> [blacklist on|off|create]\n"
-#endif
 #ifdef OSD
         @"\t-O         [osd: needs external app 'OSDisplay']\n"
 #endif
@@ -358,13 +269,7 @@ int main(int argc, const char * argv[])
             else if (!strcmp(argv[i], "-D")) {
                 dump_values = YES;
             }
-#ifdef BLACKLIST
-            else if (!strcmp(argv[i], "-B")) {
-                i++;
-                if (i >= argc) break;
-                useDefaults = [[NSString alloc] initWithUTF8String:argv[i]];
-            }
-#endif
+
             else if (!strcmp(argv[i], "-p")) {
                 i++;
                 if (i >= argc) break;
@@ -479,104 +384,7 @@ int main(int argc, const char * argv[])
                             break;
                     }
                 }
-#ifdef BLACKLIST
-                // Blacklist
-                blacklistedDeviceWithNumber = 0;
-                defaults = [NSUserDefaults standardUserDefaults];
-
-                if (![useDefaults isEqualToString:@"n"]) {
-                    if ([defaults objectForKey:@"Blacklist"]) {
-                        MyLog(@"I: blacklist is active");
-                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
-                        {
-                            MyLog(@"I: searching for '%@'", screenName);
-                            if ([(NSString *)object isEqualToString:screenName]) {
-                                blacklistedDeviceWithNumber = displayId;
-                                MyLog(@"I: success - found '%@' in blacklist", screenName);
-                                MyLog(@"I: using user-defaults to store current value");
-                                break;
-                            }
-                        }
-                    }
-                    
-                    
-                    if ([useDefaults isEqualToString:@"y"]) {
-                        blacklistedDeviceWithNumber = displayId;
-                        MyLog(@"I: using user-defaults to store current value");
-                    }
-                    else if ([useDefaults isEqualToString:@"c"]) {
-                        blacklistedDeviceWithNumber = displayId;
-                        int needReload = 1;
-                        
-                        NSMutableArray *newBlacklist = [NSMutableArray array];
-                        
-                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
-                        {
-                            MyLog(@"I: searching for '%@'", screenName);
-                            if ([(NSString *)object isEqualToString:screenName]) {
-                                MyLog(@"I: found '%@' already in blacklist", screenName);
-                                needReload = 0;
-                                break;
-                            } else {
-                                [newBlacklist addObject:object];
-                            }
-                        }
-                        
-                        if (needReload) {
-                            MyLog(@"I: adding '%@' to blacklist", screenName);
-                            MyLog(@"I: now using user-defaults to store current value");
-                            [newBlacklist addObject:screenName];
-                            [defaults setObject:newBlacklist forKey:@"Blacklist"];
-                            [defaults synchronize];
-                        }
-                        
-                        newBlacklist = nil;
-                    }
-                    else if ([useDefaults isEqualToString:@"r"]) {
-                        blacklistedDeviceWithNumber = 0;
-                        int needReload = 0;
-                        
-                        NSMutableArray *newBlacklist = [NSMutableArray array];
-                        for (id object in (NSArray *)[defaults objectForKey:@"Blacklist"])
-                        {
-                            MyLog(@"I: searching for '%@'", screenName);
-                            if ([(NSString *)object isEqualToString:screenName]) {
-                                MyLog(@"I: removing '%@' from blacklist", screenName);
-                                needReload = 1;
-                            } else {
-                                [newBlacklist addObject:object];
-                            }
-                        }
-                        
-                        if (needReload) {
-                            if ([newBlacklist count] > 0) {
-                                MyLog(@"I: reloading blacklist");
-                                [defaults setObject:newBlacklist forKey:@"Blacklist"];
-                            } else {
-                                MyLog(@"I: deleting blacklist");
-                                [defaults removeObjectForKey:@"Blacklist"];
-                            }
-                            [defaults synchronize];
-                        }
-                        
-                        newBlacklist = nil;
-                    }
-                    else if ([useDefaults isEqualToString:@"d"]) {
-                        blacklistedDeviceWithNumber = 0;
-                        MyLog(@"I: deleting blacklist");
-                        [defaults removeObjectForKey:@"Blacklist"];
-                        [defaults synchronize];
-                    }
-                }
                 
-                NSDictionary *defaultsDict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                              [NSNumber numberWithInt:50], @"Brightness-1", [NSNumber numberWithInt:50],  @"Contrast-1",
-                                              [NSNumber numberWithInt:50], @"Brightness-2", [NSNumber numberWithInt:50],  @"Contrast-2",
-                                              [NSNumber numberWithInt:50], @"Brightness-3", [NSNumber numberWithInt:50],  @"Contrast-3",
-                                              [NSNumber numberWithInt:0],  @"MinValue",     [NSNumber numberWithInt:100], @"MaxValue",
-                                              [NSArray arrayWithObjects: @"First Monitor", @"Second Monitor", nil], @"Blacklist", nil];
-                [defaults registerDefaults:defaultsDict];
-#endif
                 // Debugging
                 if (dump_values) {
                     for (uint i=0x00; i<=255; i++) {

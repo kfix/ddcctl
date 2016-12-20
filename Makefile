@@ -8,9 +8,6 @@ CCFLAGS =
 #CCFLAGS += -DTT_DDC
 #CCFLAGS += -DTT_SIMPLE
 
-## Uncomment to use Blacklist (read/write values to/from user-defaults)
-#CCFLAGS += -DBLACKLIST
-
 ## Uncomment to use an external app 'OSDisplay' to have a BezelUI like OSD
 #CCFLAGS += -DOSD
 
