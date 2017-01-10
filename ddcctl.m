@@ -380,13 +380,15 @@ int main(int argc, const char * argv[])
                     if (control_id > -1) {
                         // this is a valid monitor control
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
-                        if (argval != argval_num) {
-                            // relative setting: read, calculate, then write
+                        if ([argval hasPrefix:@"+"] || [argval hasPrefix:@"-"]) { // +/-NN relative
+                            getSetControl(cdisplay, control_id, argval_num, [argval substringToIndex:1]);
+                        } else if ([argval hasSuffix:@"+"] || [argval hasSuffix:@"-"]) { // NN+/- relative
+                            // read, calculate, then write
                             getSetControl(cdisplay, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
                         } else if ([argval hasPrefix:@"?"]) {
                             // read current setting
                             getControl(cdisplay, control_id);
-                        } else {
+                        } else if (argval_num == argval) {
                             // write fixed setting
                             setControl(cdisplay, control_id, [argval intValue]);
                         }
