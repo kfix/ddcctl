@@ -234,6 +234,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         
         // reset values and return 0, if data reading fails
         if (i >= kMaxRequests) {
+            read->success = false;
             read->max_value = 0;
             read->current_value = 0;
             printf("E: No data after %d tries! \n", i);
@@ -242,6 +243,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         
         usleep(40000); // 40msec -> See DDC/CI Vesa Standard - 4.4.1 Communication Error Recovery
     }
+    read->success = true;
     read->max_value = reply_data[7];
     read->current_value = reply_data[9];
     return result;
