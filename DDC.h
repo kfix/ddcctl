@@ -84,12 +84,14 @@ struct EDID {
     UInt8 year : 8;
     UInt8 versionmajor : 8;
     UInt8 versionminor : 8;
-    UInt8 digitalinput : 1;
+    union videoinput {
         struct digitalinput {
+            UInt8 type : 1;
             UInt8 : 6;
             UInt8 dfp : 1;
         } digital;
         struct analoginput {
+            UInt8 type : 1;
             UInt8 synclevels : 2;
             UInt8 pedestal : 1;
             UInt8 separate : 1;
@@ -97,6 +99,7 @@ struct EDID {
             UInt8 green : 1;
             UInt8 serrated : 1;
         } analog;
+    } videoinput;
     UInt8 maxh : 8;
     UInt8 maxv : 8;
     UInt8 gamma : 8;
@@ -181,14 +184,8 @@ struct EDID {
             UInt8 interlaced : 1;
             UInt8 stereo : 2;
             UInt8 synctype : 2;
-                struct analogsync {
-                    UInt8 serrated : 1;
-                    UInt8 syncall : 1;
-                } analog;
-                struct digitalsync {
-                    UInt8 vsync : 1;
-                    UInt8 hsync : 1;
-                } digital;
+            UInt8 vsyncpol_serrated: 1;
+            UInt8 hsyncpol_syncall: 1;
             UInt8 twowaystereo : 1;
         } timing;
         struct text {
