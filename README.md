@@ -12,19 +12,14 @@ And *possibly* (if your monitor firmware is well implemented):
 * color presets
 * reset 
 
-This is ddcctl 0.1x ;) 
-* rework of ddc read function to detect the correct TransactionType 
-* this feature is adaptable - see Makefile for detailed information 
-* new command-line keys for rgb colors 
-* new command-line keys for reset brightness and contrast or colors 
-* some more ... 
-
-
 Install
 ----
 ```bash
 make install
 ```
+
+For an On-Screen Display using OSDisplay.app:  
+`make CCFLAGS=-DOSD clean ddcctl`
 
 Usage
 ----
@@ -35,6 +30,11 @@ You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets
 Known Bugs / Caveats
 ----
 `ddcctl` gets a lot of bug reports for stuff that can't be remotely debugged or fixed.  
+Please include pertinent information on your monitors, Macintosh, and macOS.
+Be warned, here are the four main issues I will close out-of-hand:  
+
+__MY HACKINTOSH <whatever>__:  
+You're on your own with Hackintoshes.  
 
 __YOUR PC MONITOR MAY SUCK AT DDC__  
 The DDC standard is very loosely implemented by monitor manufacturers beyond sleeping the display.  

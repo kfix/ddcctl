@@ -4,34 +4,12 @@
 //  http://en.wikipedia.org/wiki/Display_Data_Channel#DDC.2FCI
 //  http://en.wikipedia.org/wiki/Monitor_Control_Command_Set
 //
-//  Copyright Joey Korkames 2014 http://github.com/kfix
+//  Copyright Joey Korkames 2016 http://github.com/kfix
 //  Licensed under GPLv3, full text at http://www.gnu.org/licenses/gpl-3.0.txt
-//
 
-//
-//  Marc (Saman-VDR) 2016:
-//  With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
-//  This happens because AppleIntelFramebuffer do not support kIOI2CDDCciReplyTransactionType.
-//  So this version comes with a reworked ddc read function to detect the correct TransactionType.
-//  Kernel freezes were fixed by setting minReplyDelay to 10
-//  Now reading data from my DELL is possible!
-//
-//
-//  New command-line keys for testing (working with my DELL):
-//  -rg 1-100  -> red gain
-//  -gg 1-100  -> green gain
-//  -bg 1-100  -> blue gain
-//  -rrgb      -> reset color
-//  -rbc       -> reset brightness and contrast
-//
-//
-//  Now using argv[] instead off user-defaults to handle commandline arguments.
-//
+//  Now using argv[] instead of user-defaults to handle commandline arguments.
 //  Added optional use of an external app 'OSDisplay' to have a BezelUI like OSD.
-//  Edit Makefile to define OSD, then recompile. Use '-O' as a command to activate.
-//
-//  Have fun!
-//
+//  Have fun! Marc (Saman-VDR) 2016
 
 #ifdef DEBUG
 #define MyLog NSLog

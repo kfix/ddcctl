@@ -6,7 +6,6 @@
 //  See http://github.com/jontaylor/DDC-CI-Tools-for-OS-X
 //
 
-
 #include <IOKit/IOKitLib.h>
 #include <IOKit/graphics/IOGraphicsLib.h>
 #include <ApplicationServices/ApplicationServices.h>
@@ -84,10 +83,6 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         if (CGDisplayVendorNumber(displayID) != vendorID  ||
             CGDisplayModelNumber(displayID)  != productID ||
             CGDisplaySerialNumber(displayID) != serialNumber) // SN is zero in lots of cases, so duplicate-monitors can confuse us :-/
-        {
-            CFRelease(info);
-            continue;
-        }
 #ifdef DEBUG
         // considering this IOFramebuffer as the match for the CGDisplay, dump out its information
         printf("\nFramebuffer: %s\n", name);
@@ -111,7 +106,7 @@ dispatch_semaphore_t DisplayQueue(CGDirectDisplayID displayID) {
     static struct DDCQueue {CGDirectDisplayID id; dispatch_semaphore_t queue;} *queues = NULL;
     dispatch_semaphore_t queue = NULL;
     if (!queues)
-        queues = calloc(50, sizeof(*queues));//FIXME: specify
+        queues = calloc(50, sizeof(*queues)); //FIXME: specify
     UInt64 i = 0;
     while (i < queueCount)
         if (queues[i].id == displayID)
@@ -199,7 +194,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         request.sendTransactionType             = kIOI2CSimpleTransactionType;
         request.sendBuffer                      = (vm_address_t) &data[0];
         request.sendBytes                       = 5;
-        request.minReplyDelay                   = 10;  // may differ, but this is working
+        request.minReplyDelay                   = 10;  // too short can freeze kernel
         
         data[0] = 0x51;
         data[1] = 0x82;
@@ -248,6 +243,13 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
 }
 
 int SupportedTransactionType() {
+   /*
+     With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
+     This happens because AppleIntelFramebuffer do not support kIOI2CDDCciReplyTransactionType.
+     So this version comes with a reworked ddc read function to detect the correct TransactionType.
+     --SamanVDR 2016
+   */
+
     kern_return_t   kr;
     io_iterator_t   io_objects;
     io_service_t    io_service;
