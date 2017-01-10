@@ -19,6 +19,7 @@
 #define RESET_COLOR 0x08
 #define BRIGHTNESS 0x10  //OK
 #define CONTRAST 0x12 //OK
+#define COLOR_PRESET_A                 0x14     // dell u2515h -> Presets: 4 = 5000K, 5 = 6500K, 6 = 7500K, 8 = 9300K, 9 = 10000K, 11 = 5700K, 12 = Custom Color
 #define RED_GAIN 0x16
 #define GREEN_GAIN 0x18
 #define BLUE_GAIN 0x1A
@@ -48,12 +49,12 @@
 #define ORIENTATION 0xAA
 #define AUDIO_MUTE 0x8D
 #define SETTINGS 0xB0                  //unsure on this one
-#define ON_SCREEN_DISPLAY 0xCA
+#define ON_SCREEN_DISPLAY              0xCA     // read only   -> returns '1' (OSD closed) or '2' (OSD active)
 #define OSD_LANGUAGE 0xCC
 #define DPMS 0xD6
-#define MAGIC_BRIGHT 0xDC //unsure
+#define COLOR_PRESET_B                 0xDC     // dell u2515h -> Presets: 0 = Standard, 2 = Multimedia, 3 = Movie, 5 = Game
 #define VCP_VERSION 0xDF
-#define COLOR_PRESET 0xE0
+#define COLOR_PRESET_C                 0xE0     // dell u2515h -> Brightness on/off (0 or 1)
 #define POWER_CONTROL 0xE1
 #define TOP_LEFT_SCREEN_PURITY 0xE8
 #define TOP_RIGHT_SCREEN_PURITY 0xE9
@@ -238,5 +239,5 @@ struct EDID {
 bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write);
 bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read);
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid);
-
+int SupportedTransactionType();
 #endif
