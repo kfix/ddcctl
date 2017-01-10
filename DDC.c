@@ -14,7 +14,6 @@
 #define kMaxRequests 10
 
 /*
- IOFramebufferPortFromCGDisplayID based on: https://github.com/kfix/ddcctl/commit/0d66010890f99aa0972bb1478b41dda6329f52b4
  
  Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
  replaces CGDisplayIOServicePort: https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
@@ -83,8 +82,14 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         if (CGDisplayVendorNumber(displayID) != vendorID  ||
             CGDisplayModelNumber(displayID)  != productID ||
             CGDisplaySerialNumber(displayID) != serialNumber) // SN is zero in lots of cases, so duplicate-monitors can confuse us :-/
+        {
+            CFRelease(info);
+            continue;
+        }
+
 #ifdef DEBUG
         // considering this IOFramebuffer as the match for the CGDisplay, dump out its information
+        // compare with `make displaylist`
         printf("\nFramebuffer: %s\n", name);
         printf("%s\n", CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
         printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
