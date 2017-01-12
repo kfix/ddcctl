@@ -345,12 +345,7 @@ int main(int argc, const char * argv[])
             CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
             struct EDID edid = {};
             if (EDIDTest(cdisplay, &edid)) {
-                for (NSValue *value in @[[NSValue valueWithPointer:&edid.descriptor1],
-                                         [NSValue valueWithPointer:&edid.descriptor2],
-                                         [NSValue valueWithPointer:&edid.descriptor3],
-                                         [NSValue valueWithPointer:&edid.descriptor4]])
-                {
-                    union descriptor *des = value.pointerValue;
+				for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors); des++) {
                     switch (des->text.type)
                     {
                         case 0xFF:
