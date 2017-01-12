@@ -240,5 +240,5 @@ struct EDID {
 bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write);
 bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read);
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid);
-int SupportedTransactionType();
+UInt32 SupportedTransactionType();
 #endif
