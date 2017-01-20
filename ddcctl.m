@@ -139,17 +139,20 @@ int main(int argc, const char * argv[])
                 NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
                 CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); // dspPhySz only valid if EDID present!
                 float displayScale = [screen backingScaleFactor];
+                double rotation = CGDisplayRotation(screenNumber);
                 if (displayScale > 1) {
-                    MyLog(@"D: NSScreen #%u (%.0fx%.0f HiDPI)",
-                          screenNumber,
-                          displayPixelSize.width,
-                          displayPixelSize.height);
-                }
-                else {
-                    MyLog(@"D: NSScreen #%u (%.0fx%.0f) DPI is %0.2f",
+                    MyLog(@"D: NSScreen #%u (%.0fx%.0f %g°) HiDPI",
                           screenNumber,
                           displayPixelSize.width,
                           displayPixelSize.height,
+                          rotation);
+                }
+                else {
+                    MyLog(@"D: NSScreen #%u (%.0fx%.0f %g°) %0.2f DPI",
+                          screenNumber,
+                          displayPixelSize.width,
+                          displayPixelSize.height,
+                          rotation,
                           (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
                 }
             }
