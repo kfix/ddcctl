@@ -63,17 +63,13 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         IOItemCount busCount;
         IOFBGetI2CInterfaceCount(serv, &busCount);
         
-        if (!success || busCount < 1) {
+        if (!success || busCount < 1 || CGDisplayIsBuiltin(displayID)) {
             // this does not seem to be a DDC-enabled display, skip it
             CFRelease(info);
             continue;
-        } else {
-            // MacBook built-in screens have IOFBI2CInterfaceIDs=(0) but do not respond to DDC comms
-            // they also do not have a BusType: IOFBI2CInterfaceInfo = ({"IOI2CBusType"=1 .. })
-            // if (framebuffer.hasDDCConnect(0)) // https://developer.apple.com/reference/kernel/ioframebuffer/1813510-hasddcconnect?language=objc
-            // kDisplayBundleKey
-            // kAppleDisplayTypeKey -- if this is an Apple display, can use IODisplay func to change brightness: http://stackoverflow.com/a/32691700/3878712
         }
+        // if (framebuffer.hasDDCConnect(0)) // https://developer.apple.com/reference/kernel/ioframebuffer/1813510-hasddcconnect?language=objc
+        // kAppleDisplayTypeKey -- if this is an Apple display, can use IODisplay func to change brightness: http://stackoverflow.com/a/32691700/3878712
         
         if (CFDictionaryGetValueIfPresent(info, CFSTR(kDisplaySerialNumber), (const void**)&serialNumberRef))
             CFNumberGetValue(serialNumberRef, kCFNumberCFIndexType, &serialNumber);
@@ -329,6 +325,8 @@ int SupportedTransactionType() {
                 } else {
                     printf("D: IOI2CDisplayPortNativeTransactionType    supported \n");
                     //supportedType = kIOI2CDisplayPortNativeTransactionType;
+                    // http://hackipedia.org/Hardware/video/connectors/DisplayPort/VESA%20DisplayPort%20Standard%20v1.1a.pdf
+                    // http://www.electronic-products-design.com/geek-area/displays/display-port
                 }
 #else
                 // kIOI2CSimpleTransactionType = 1
@@ -358,6 +356,39 @@ int SupportedTransactionType() {
 
 bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid) {
     IOI2CRequest request = {};
+/*! from https://opensource.apple.com/source/IOGraphics/IOGraphics-513.1/IOGraphicsFamily/IOKit/i2c/IOI2CInterface.h.auto.html
+ *  not in https://developer.apple.com/reference/kernel/1659924-ioi2cinterface.h/ioi2crequest?changes=latest_beta&language=objc
+ * @struct IOI2CRequest
+ * @abstract A structure defining an I2C bus transaction.
+ * @discussion This structure is used to request an I2C transaction consisting of a send (write) to and reply (read) from a device, either of which is optional, to be carried out atomically on an I2C bus.
+ * @field __reservedA Set to zero.
+ * @field result The result of the transaction. Common errors are kIOReturnNoDevice if there is no device responding at the given address, kIOReturnUnsupportedMode if the type of transaction is unsupported on the requested bus.
+ * @field completion A completion routine to be executed when the request completes. If NULL is passed, the request is synchronous, otherwise it may execute asynchronously.
+ * @field commFlags Flags that modify the I2C transaction type. The following flags are defined:<br>
+ *      kIOI2CUseSubAddressCommFlag Transaction includes a subaddress.<br>
+ * @field minReplyDelay Minimum delay as absolute time between send and reply transactions.
+ * @field sendAddress I2C address to write.
+ * @field sendSubAddress I2C subaddress to write.
+ * @field __reservedB Set to zero.
+ * @field sendTransactionType The following types of transaction are defined for the send part of the request:<br>
+ *      kIOI2CNoTransactionType No send transaction to perform. <br>
+ *      kIOI2CSimpleTransactionType Simple I2C message. <br>
+ *      kIOI2CCombinedTransactionType Combined format I2C R/~W transaction. <br>
+ * @field sendBuffer Pointer to the send buffer.
+ * @field sendBytes Number of bytes to send. Set to actual bytes sent on completion of the request.
+ * @field replyAddress I2C Address from which to read.
+ * @field replySubAddress I2C Address from which to read.
+ * @field __reservedC Set to zero.
+ * @field replyTransactionType The following types of transaction are defined for the reply part of the request:<br>
+ *      kIOI2CNoTransactionType No reply transaction to perform. <br>
+ *      kIOI2CSimpleTransactionType Simple I2C message. <br>
+ *      kIOI2CDDCciReplyTransactionType DDC/ci message (with embedded length). See VESA DDC/ci specification. <br>
+ *      kIOI2CCombinedTransactionType Combined format I2C R/~W transaction. <br>
+ * @field replyBuffer Pointer to the reply buffer.
+ * @field replyBytes Max bytes to reply (size of replyBuffer). Set to actual bytes received on completion of the request.
+ * @field __reservedD Set to zero.
+ */
+
     UInt8 data[128] = {};
     request.sendAddress = 0xA0;
     request.sendTransactionType = kIOI2CSimpleTransactionType;
