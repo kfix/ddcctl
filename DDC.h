@@ -229,10 +229,7 @@ struct EDID {
             UInt8 gamma2 : 8;
             UInt32 : 24;
         } whitepoint;
-    } descriptor1;
-    union descriptor descriptor2;
-    union descriptor descriptor3;
-    union descriptor descriptor4;
+    } descriptors[4];
     UInt8 extensions : 8;
     UInt8 checksum : 8;
 };
