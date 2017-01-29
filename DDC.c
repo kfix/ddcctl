@@ -34,7 +34,7 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
     {
         CFDictionaryRef info;
         io_name_t	name;
-        CFIndex vendorID, productID, serialNumber = 0;
+        CFIndex vendorID = 0, productID = 0, serialNumber = 0;
         CFNumberRef vendorIDRef, productIDRef, serialNumberRef;
 #ifdef DEBUG
         CFStringRef location = CFSTR("");
