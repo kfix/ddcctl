@@ -245,7 +245,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
     return result;
 }
 
-int SupportedTransactionType() {
+UInt32 SupportedTransactionType() {
    /*
      With my setup (Intel HD4600 via displaylink to 'DELL U2515H') the original app failed to read ddc and freezes my system.
      This happens because AppleIntelFramebuffer do not support kIOI2CDDCciReplyTransactionType.
@@ -265,7 +265,7 @@ int SupportedTransactionType() {
         return 0;
     }
     
-    UInt64 supportedType = 0;
+    UInt32 supportedType = 0;
     
     while((io_service = IOIteratorNext(io_objects)) != MACH_PORT_NULL)
     {
