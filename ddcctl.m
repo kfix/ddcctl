@@ -135,6 +135,7 @@ int main(int argc, const char * argv[])
             NSDictionary *description = [screen deviceDescription];
             if ([description objectForKey:@"NSDeviceIsScreen"]) {
                 CGDirectDisplayID screenNumber = [[description objectForKey:@"NSScreenNumber"] unsignedIntValue];
+                if (CGDisplayIsBuiltin(screenNumber)) continue; // ignore MacBook screens because the lid can be closed and they don't use DDC.
                 [_displayIDs addPointer:(void *)(UInt64)screenNumber];
                 NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
                 CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); // dspPhySz only valid if EDID present!
@@ -157,7 +158,7 @@ int main(int argc, const char * argv[])
                 }
             }
         }
-        MyLog(@"I: found %lu display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
+        MyLog(@"I: found %lu external display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
 
         
         // Defaults
