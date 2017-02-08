@@ -18,7 +18,7 @@ Install
 make install
 ```
 
-For an On-Screen Display using OSDisplay.app:  
+For an On-Screen Display using [OSDisplay.app](https://github.com/zulu-entertainment/OSDisplay):  
 `make CCFLAGS=-DOSD clean ddcctl`
 
 Usage
