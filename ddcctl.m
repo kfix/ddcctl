@@ -44,7 +44,7 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
     command.max_value = 0;
     command.current_value = 0;
     MyLog(@"D: querying VCP control: #%u =?", command.control_id);
-    
+
     if (!DDCRead(cdisplay, &command)) {
         MyLog(@"E: DDC send command failed!");
         MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
@@ -60,7 +60,7 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
     struct DDCWriteCommand command;
     command.control_id = control_id;
     command.new_value = new_value;
-    
+
     MyLog(@"D: setting VCP control #%u => %u", command.control_id, command.new_value);
     if (!DDCWrite(cdisplay, &command)){
         MyLog(@"E: Failed to send DDC command!");
@@ -75,14 +75,14 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
                                                     @"-l", [NSString stringWithFormat:@"%u", new_value],
                                                     @"-i", @"brightness", nil]];
                 break;
-                
+
             case 18:
                 [NSTask launchedTaskWithLaunchPath:OSDisplay
                                          arguments:[NSArray arrayWithObjects:
                                                     @"-l", [NSString stringWithFormat:@"%u", new_value],
                                                     @"-i", @"contrast", nil]];
                 break;
-                
+
             default:
                 break;
         }
@@ -97,17 +97,17 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
     command.control_id = control_id;
     command.max_value = 0;
     command.current_value = 0;
-    
+
     // read
     MyLog(@"D: querying VCP control: #%u =?", command.control_id);
-    
+
     if (!DDCRead(cdisplay, &command)) {
         MyLog(@"E: DDC send command failed!");
         MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     } else {
         MyLog(@"I: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     }
-    
+
     // calculate
     NSString *formula = [NSString stringWithFormat:@"%u %@ %@", command.current_value, operator, new_value];
     NSExpression *exp = [NSExpression expressionWithFormat:formula];
@@ -125,11 +125,11 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
 /* Main function */
 int main(int argc, const char * argv[])
 {
-    
+
     @autoreleasepool {
-        
+
         NSPointerArray *_displayIDs = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality];
-        
+
         for (NSScreen *screen in NSScreen.screens)
         {
             NSDictionary *description = [screen deviceDescription];
@@ -160,13 +160,13 @@ int main(int argc, const char * argv[])
         }
         MyLog(@"I: found %lu external display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
 
-        
+
         // Defaults
         NSString *screenName = @"";
         NSUInteger displayId = -1;
         NSUInteger command_interval = 100000;
         BOOL dump_values = NO;
-        
+
         NSString *HelpString = @"Usage:\n"
         @"ddcctl \t-d <1-..>  [display#]\n"
         @"\t-w 100000  [delay usecs between settings]\n"
@@ -197,11 +197,11 @@ int main(int argc, const char * argv[])
         @"\t-X NN      (put setting X to NN)\n"
         @"\t-X <NN>-   (decrease setting X by NN)\n"
         @"\t-X <NN>+   (increase setting X by NN)";
-        
-        
+
+
         // Commandline Arguments
         NSMutableDictionary *actions = [[NSMutableDictionary alloc] init];
-        
+
         for (int i=1; i<argc; i++)
         {
             if (!strcmp(argv[i], "-d")) {
@@ -209,45 +209,45 @@ int main(int argc, const char * argv[])
                 if (i >= argc) break;
                 displayId = atoi(argv[i]);
             }
-            
+
             else if (!strcmp(argv[i], "-b")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@BRIGHTNESS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"b"];
             }
-            
+
             else if (!strcmp(argv[i], "-c")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@CONTRAST, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"c"];
             }
-            
+
             else if (!strcmp(argv[i], "-rbc")) {
                 [actions setObject:@[@RESET_BRIGHTNESS_AND_CONTRAST, @"1"] forKey:@"rbc"];
             }
-            
+
             else if (!strcmp(argv[i], "-rg")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@RED_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"rg"];
             }
-            
+
             else if (!strcmp(argv[i], "-gg")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@GREEN_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"gg"];
             }
-            
+
             else if (!strcmp(argv[i], "-bg")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@BLUE_GAIN, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"bg"];
             }
-            
+
             else if (!strcmp(argv[i], "-rrgb")) {
                 [actions setObject:@[@RESET_COLOR, @"1"] forKey:@"rrgb"];
             }
-            
+
             else if (!strcmp(argv[i], "-D")) {
                 dump_values = YES;
             }
@@ -257,59 +257,59 @@ int main(int argc, const char * argv[])
                 if (i >= argc) break;
                 [actions setObject:@[@DPMS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"p"];
             }
-            
+
             else if (!strcmp(argv[i], "-o")) { // read only
                 [actions setObject:@[@ORIENTATION, @"?"] forKey:@"o"];
             }
-            
+
             else if (!strcmp(argv[i], "-osd")) { // read only - returns '1' (OSD closed) or '2' (OSD active)
                 [actions setObject:@[@ON_SCREEN_DISPLAY, @"?"] forKey:@"osd"];
             }
-            
+
             else if (!strcmp(argv[i], "-lang")) { // read only
                 [actions setObject:@[@OSD_LANGUAGE, @"?"] forKey:@"lang"];
             }
-            
+
             else if (!strcmp(argv[i], "-reset")) {
                 [actions setObject:@[@RESET, @"1"] forKey:@"reset"];
             }
-            
+
             else if (!strcmp(argv[i], "-preset_a")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@COLOR_PRESET_A, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_a"];
             }
-            
+
             else if (!strcmp(argv[i], "-preset_b")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@COLOR_PRESET_B, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_b"];
             }
-            
+
             else if (!strcmp(argv[i], "-preset_c")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@COLOR_PRESET_C, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"preset_c"];
             }
-            
+
             else if (!strcmp(argv[i], "-i")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@INPUT_SOURCE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"i"];
             }
-            
+
             else if (!strcmp(argv[i], "-m")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@AUDIO_MUTE, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"m"];
             }
-            
+
             else if (!strcmp(argv[i], "-v")) {
                 i++;
                 if (i >= argc) break;
                 [actions setObject:@[@AUDIO_SPEAKER_VOLUME, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"v"];
             }
-            
+
             else if (!strcmp(argv[i], "-w")) {
                 i++;
                 if (i >= argc) break;
@@ -335,14 +335,14 @@ int main(int argc, const char * argv[])
                 NSLog(@"ddcctl 0.1x - %@", HelpString);
                 return 0;
             }
-            
+
             else {
                 NSLog(@"Unknown argument: %@", [[NSString alloc] initWithUTF8String:argv[i]]);
                 return -1;
             }
         }
-        
-        
+
+
         // Let's go...
         if (0 < displayId && displayId <= [_displayIDs count]) {
             MyLog(@"I: polling display %lu's EDID", displayId);
@@ -361,7 +361,7 @@ int main(int argc, const char * argv[])
                             break;
                     }
                 }
-                
+
                 // Debugging
                 if (dump_values) {
                     for (uint i=0x00; i<=255; i++) {
@@ -369,13 +369,13 @@ int main(int argc, const char * argv[])
                         usleep(command_interval);
                     }
                 }
-                
+
                 // Actions
                 [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
                     NSInteger control_id = [valueArray[0] intValue];
                     NSString *argval = valueArray[1];
                     MyLog(@"D: action: %@: %@", argname, argval);
-                    
+
                     if (control_id > -1) {
                         // this is a valid monitor control
                         NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
@@ -394,7 +394,7 @@ int main(int argc, const char * argv[])
                     }
                     usleep(command_interval); // stagger comms to these wimpy I2C mcu's
                 }];
-                
+
             } else {
                 MyLog(@"E: Failed to poll display!");
                 return -1;
