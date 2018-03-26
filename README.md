@@ -7,10 +7,10 @@ Adjust your external monitors' built-in controls from the OSX shell:
 And *possibly* (if your monitor firmware is well implemented):  
 * input source  
 * built-in speaker volume  
-* on/off/standby 
+* on/off/standby
 * rgb colors
 * color presets
-* reset 
+* reset
 
 Install
 ----
