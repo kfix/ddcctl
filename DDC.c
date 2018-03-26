@@ -11,7 +11,9 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include "DDC.h"
 
+#ifndef kMaxRequests
 #define kMaxRequests 10
+#endif
 
 /*
 
