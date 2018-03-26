@@ -17,16 +17,16 @@ debug: CCFLAGS += -DDEBUG
 debug: clean ddcctl
 
 %.o: %.c
-	gcc $(CCFLAGS) -Wall -c -o $@ $<
-	
+	$(CC) $(CCFLAGS) -Wall -c -o $@ $<
+
 ddcctl: DDC.o
-	gcc $(CCFLAGS) -Wall -o $@ -lobjc -framework IOKit -framework AppKit -framework Foundation $< $@.m
+	$(CC) $(CCFLAGS) -Wall -o $@ -lobjc -framework IOKit -framework AppKit -framework Foundation $< $@.m
 
 install: ddcctl
 	install ddcctl /usr/local/bin
 
 clean:
-	-rm *.o ddcctl
+	$(RM) *.o ddcctl
 
 framebuffers:
 	ioreg -c IOFramebuffer -k IOFBI2CInterfaceIDs -b -f -l -r -d 1
