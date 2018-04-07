@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
 function get_primary_brightness() {
+  declare -A bparams
   brightness_string=$(ioreg -c AppleBacklightDisplay | grep -o '"brightness"=[^}]*}')
 
   # this should be something like `"brightness"={"min"=0,"max"=65535,"value"=4108}`, pull out the #'s
-  read min max val <<< $(echo "$brightness_string" | egrep -o '[0-9]+' | tr '\n' ' ')
+  # order doesn't matter
+  while IFS='=' read -r -a array; do
+    bparams[${array[0]}]=${array[1]}
+  done <<< $(echo "$brightness_string" | egrep -o '"(min|max|value)"=[0-9]+' | sed 's,",,g')
 
-  brightness=$(bc <<< "scale=2; 100 * ($val / $max)" | cut -d'.' -f1)
+  brightness=$(bc <<< "scale=2; 100 * (${bparams[value]} / ${bparams[max]})" | cut -d'.' -f1)
   echo $brightness
 }
 
