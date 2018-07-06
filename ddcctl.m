@@ -190,7 +190,7 @@ int main(int argc, const char * argv[])
         @"\t-rg <1-..>  [red gain]\n"
         @"\t-gg <1-..>  [green gain]\n"
         @"\t-bg <1-..>  [blue gain]\n"
-        @"\t-rrbg       [reset color]\n"
+        @"\t-rrgb       [reset color]\n"
         @"\n"
         @"----- Setting grammar -----\n"
         @"\t-X ?       (query value of setting X)\n"
