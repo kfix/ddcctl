@@ -195,8 +195,10 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         request.sendTransactionType             = kIOI2CSimpleTransactionType;
         request.sendBuffer                      = (vm_address_t) &data[0];
         request.sendBytes                       = 5;
-        request.minReplyDelay                   = 10;  // too short can freeze kernel
-        
+        // Certain displays / graphics cards require a long-enough delay to give a response.
+        // Relying on retry will not help if the delay is too short.
+        request.minReplyDelay                   = 30 * kMillisecondScale;  // too short can freeze kernel
+
         data[0] = 0x51;
         data[1] = 0x82;
         data[2] = 0x01;
