@@ -182,7 +182,7 @@ int main(int argc, const char * argv[])
         @"----- Settings that don\'t always work -----\n"
         @"\t-m <1|2>   [mute speaker OFF/ON]\n"
         @"\t-v <1-254> [speaker volume]\n"
-        @"\t-i <1-12>  [select input source]\n"
+        @"\t-i <1-18>  [select input source]\n"
         @"\t-p <1|2-5> [power on | standby/off]\n"
         @"\t-o         [read-only orientation]\n"
         @"\n"
