@@ -18,9 +18,6 @@ Install
 make install
 ```
 
-For an On-Screen Display using [OSDisplay.app](https://github.com/zulu-entertainment/OSDisplay):  
-`make CCFLAGS=-DOSD clean ddcctl`
-
 Usage
 ----
 Run `ddcctl -h` for some options.  
@@ -51,3 +48,11 @@ When setting input source, refer to the table below to determine which value to 
 | DisplayPort-2 | 16 |
 | HDMI-1 | 17 |
 | HDMI-2 | 18 |
+
+Credits
+----
+`ddcctl.m` sprang from a [forum thread](https://www.tonymacx86.com/threads/controlling-your-monitor-with-osx-ddc-panel.90077/page-6#post-795208) on the TonyMac-x86 boards.  
+
+`DDC.c` originated from [jontaylor/DDC-CI-Tools-for-OS-X](https://github.com/jontaylor/DDC-CI-Tools-for-OS-X), but was reworked by others on the forums.  
+
+A few forks have also backported patches, which is *nice* :ok_hand:.
