@@ -15,6 +15,11 @@
 #define kMaxRequests 10
 #endif
 
+#ifndef _IOKIT_IOFRAMEBUFFER_H
+#define kIOFBDependentIDKey	"IOFBDependentID"
+#define kIOFBDependentIndexKey	"IOFBDependentIndex"
+#endif
+
 /*
 
  Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
@@ -36,8 +41,8 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
     {
         CFDictionaryRef info;
         io_name_t	name;
-        CFIndex vendorID = 0, productID = 0, serialNumber = 0;
-        CFNumberRef vendorIDRef, productIDRef, serialNumberRef;
+        CFIndex vendorID = 0, productID = 0, serialNumber = 0, dependID = 0, dependIndex = 0;
+        CFNumberRef vendorIDRef, productIDRef, serialNumberRef, dependIDRef, dependIndexRef;
 #ifdef DEBUG
         CFStringRef location = CFSTR("");
         CFStringRef serial = CFSTR("");
@@ -55,6 +60,11 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         if (locationRef) location = CFStringCreateCopy(NULL, locationRef);
         CFStringRef serialRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialString));
         if (serialRef) serial = CFStringCreateCopy(NULL, serialRef);
+
+        if ((dependIDRef = CFDictionaryGetValue(info, CFSTR(kIOFBDependentIDKey))))
+            CFNumberGetValue(dependIDRef, kCFNumberCFIndexType, &dependID);
+        if ((dependIndexRef = CFDictionaryGetValue(info, CFSTR(kIOFBDependentIndexKey))))
+            CFNumberGetValue(dependIndexRef, kCFNumberCFIndexType, &dependIndex);
 #endif
         if (CFDictionaryGetValueIfPresent(info, CFSTR(kDisplayVendorID), (const void**)&vendorIDRef))
             success = CFNumberGetValue(vendorIDRef, kCFNumberCFIndexType, &vendorID);
@@ -93,6 +103,7 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
         printf(" UN:%d", CGDisplayUnitNumber(displayID));
         printf(" IN:%d", iter);
+        printf(" depID:%ld depIdx:%ld", dependID, dependIndex);
         printf(" Serial:%s\n\n", CFStringGetCStringPtr(serial, kCFStringEncodingUTF8));
 #endif
         servicePort = serv;
