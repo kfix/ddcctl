@@ -210,7 +210,11 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         request.sendBytes                       = 5;
         // Certain displays / graphics cards require a long-enough delay to give a response.
         // Relying on retry will not help if the delay is too short.
-        request.minReplyDelay                   = 30 * kMillisecondScale;  // too short can freeze kernel
+        request.minReplyDelay                   = kDDCMinReplyDelay * kNanosecondScale;
+		// FIXME: this should be tuneable at runtime
+		// https://github.com/kfix/-vendorddcctl/issues/57
+		// incorrect values for GPU-vendor can cause kernel panic
+		// https://developer.apple.com/documentation/iokit/ioi2crequest/1410394-minreplydelay?language=objc
 
         data[0] = 0x51;
         data[1] = 0x82;

@@ -14,9 +14,9 @@ And *possibly* (if your monitor firmware is well implemented):
 
 Install
 ----
-```bash
-make install
-```
+* install Xcode
+* figure out if your Mac is using an Intel, Nvidia or AMD gpu
+* run `make intel` or make `make nvidia` or `make amd`
 
 Usage
 ----
