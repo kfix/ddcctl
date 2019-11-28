@@ -15,6 +15,11 @@
 #define kMaxRequests 10
 #endif
 
+#ifndef kDDCMinReplyDelay
+// https://github.com/kfix/ddcctl/issues/57
+_Static_assert (0, "must build with `make (amd|intel|nvidia)`");
+#endif
+
 #ifndef _IOKIT_IOFRAMEBUFFER_H
 #define kIOFBDependentIDKey	"IOFBDependentID"
 #define kIOFBDependentIndexKey	"IOFBDependentIndex"
@@ -212,7 +217,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         // Relying on retry will not help if the delay is too short.
         request.minReplyDelay                   = kDDCMinReplyDelay * kNanosecondScale;
 		// FIXME: this should be tuneable at runtime
-		// https://github.com/kfix/-vendorddcctl/issues/57
+		// https://github.com/kfix/ddcctl/issues/57
 		// incorrect values for GPU-vendor can cause kernel panic
 		// https://developer.apple.com/documentation/iokit/ioi2crequest/1410394-minreplydelay?language=objc
 
