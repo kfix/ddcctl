@@ -48,6 +48,7 @@ When setting input source, refer to the table below to determine which value to 
 | DisplayPort-2 | 16 |
 | HDMI-1 | 17 |
 | HDMI-2 | 18 |
+| USB-C | 27 |
 
 Credits
 ----
