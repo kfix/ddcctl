@@ -349,7 +349,7 @@ int main(int argc, const char * argv[])
             CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
             struct EDID edid = {};
             if (EDIDTest(cdisplay, &edid)) {
-				for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors); des++) {
+				for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors) / sizeof(edid.descriptors[0]); des++) {
                     switch (des->text.type)
                     {
                         case 0xFF:
