@@ -1,3 +1,8 @@
+---
+name: Issue
+about: Guidelines for reporting issues with ddcctl
+---
+
 Sending just an error message is not enough!  
 Requirements for submitters
 --
