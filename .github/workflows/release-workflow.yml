@@ -28,7 +28,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: ${{ github.ref }} release of `ddcctl`.
+          body: **${GITHUB_REF/refs\/tags\//}** release of `ddcctl`.
           draft: false
           prerelease: false
       - name: Upload GitHub Release Assets
@@ -39,5 +39,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./ddcctl.zip
-          asset_name: ddcctl binaries
+          asset_name: ddcctl_binaries.zip
           asset_content_type: application/zip
