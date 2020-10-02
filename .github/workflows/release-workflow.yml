@@ -28,7 +28,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: **${GITHUB_REF/refs\/tags\//}** release of `ddcctl`.
+          body: ${GITHUB_REF/refs\/tags\//} release of `ddcctl`.
           draft: false
           prerelease: false
       - name: Upload GitHub Release Assets
