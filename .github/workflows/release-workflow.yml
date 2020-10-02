@@ -20,6 +20,9 @@ jobs:
           make amd
           mv ddcctl ddcctl-amd
           zip ddcctl.zip ddcctl-intel ddcctl-nvidia ddcctl-amd
+      - name: Get tag
+        id: get_tag
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -28,7 +31,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: ${GITHUB_REF/refs\/tags\//} release of `ddcctl`.
+          body: ${{ steps.get_tag.outputs.VERSION }} release of `ddcctl`.
           draft: false
           prerelease: false
       - name: Upload GitHub Release Assets
