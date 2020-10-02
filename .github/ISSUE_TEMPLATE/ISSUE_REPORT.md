@@ -1,5 +1,5 @@
 ---
-name: Issue
+name: General Issue
 about: Guidelines for reporting issues with ddcctl
 ---
 
