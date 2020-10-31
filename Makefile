@@ -16,6 +16,7 @@ INSTALL_DIR = /usr/local/bin
 SOURCE_DIR = ./src
 
 ifneq "$(strip $(filter debug, $(MAKECMDGOALS)))" ""
+	CCFLAGS += -DDEBUG
 	BUILD_DIR = ./build/debug
 	PRODUCT_DIR = ./bin/debug
 else
@@ -32,8 +33,7 @@ intel nvidia: all
 amd: CCFLAGS += -DkDDCMinReplyDelay=30000000
 amd: all
 
-debug: CCFLAGS += -DDEBUG
-debug: clean ddcctl
+debug: clean
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
 	@mkdir -p $(@D)
