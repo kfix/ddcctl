@@ -55,5 +55,5 @@ framebuffers:
 displaylist:
 	ioreg -c IODisplayConnect -b -f -r -l -i -d 2
 
-.PHONY: all clean install displaylist amd intel nvidia
+.PHONY: all debug clean install displaylist amd intel nvidia
 
