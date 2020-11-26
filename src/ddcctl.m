@@ -353,96 +353,96 @@ int main(int argc, const char * argv[])
         if (!wsDisplaySets)
             MyLog(@"E: Failed to get 'DisplayAnyUserSets' key from WindowServer's preferences! (%@)", wsPrefs);
 
-        // Let's go...
-        if (0 < displayId && displayId <= [_displayIDs count]) {
-            CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
-
-            NSString *devLoc;
-	        // $ PlistBuddy -c "Print DisplayAnyUserSets:0:0:IODisplayLocation" -c "Print DisplayAnyUserSets:0:0:DisplayID" /Library/Preferences/com.apple.windowserver.plist
-	        // > IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/PEG0@1/IOPP/GFX0@0/ATY,Longavi@0/AMDFramebufferVIB
-	        // > 69733382
-            for (NSArray *displaySet in wsDisplaySets) {
-                for (NSDictionary *display in displaySet) {
-                    if ([[display valueForKey:@"DisplayID"] integerValue] == cdisplay) {
-                        devLoc = [display valueForKey:@"IODisplayLocation"]; // kIODisplayLocationKey
-                        break;
-                    }
-                }
-            }
-
-            if (!devLoc) {
-                MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
-                // we can try without this info, but we're likely to confuse identical monitors' framebuffers
-            }
-
-            // grab the IOFramebuffer for the display, this is where DDC/I2C commands are sent
-            io_service_t framebuffer;
-            if (! (framebuffer = IOFramebufferPortFromCGDisplayID(cdisplay, (__bridge CFStringRef)devLoc))) {
-                // CGDisplayIOServicePort(cdisplay) // Deprecated in OSX 10.9!
-                MyLog(@"E: Failed to acquire framebuffer device for display");
-                return -1;
-            }
-
-            MyLog(@"I: polling EDID for #%lu (ID %u => %@)", displayId, cdisplay, devLoc);
-
-            struct EDID edid = {};
-            if (EDIDTest(framebuffer, &edid)) {
-                for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors) / sizeof(edid.descriptors[0]); des++) {
-                    switch (des->text.type)
-                    {
-                        case 0xFF:
-                            MyLog(@"I: got edid.serial: %@", EDIDString(des->text.data));
-                            break;
-                        case 0xFC:
-                            screenName = EDIDString(des->text.data);
-                            MyLog(@"I: got edid.name: %@", screenName);
-                            break;
-                    }
-                }
-            } else {
-                MyLog(@"E: Failed to poll display!");
-                IOObjectRelease(framebuffer);
-                return -1;
-            }
-
-            // Debugging
-            if (dump_values) {
-                for (uint i=0x00; i<=255; i++) {
-                    getControl(framebuffer, i);
-                    usleep(command_interval);
-                }
-            }
-
-            // Actions
-            [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
-                NSInteger control_id = [valueArray[0] intValue];
-                NSString *argval = valueArray[1];
-                MyLog(@"D: action: %@: %@", argname, argval);
-
-                if (control_id > -1) {
-                    // this is a valid monitor control
-                    NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
-                    if ([argval hasPrefix:@"+"] || [argval hasPrefix:@"-"]) { // +/-NN relative
-                        getSetControl(framebuffer, control_id, argval_num, [argval substringToIndex:1]);
-                    } else if ([argval hasSuffix:@"+"] || [argval hasSuffix:@"-"]) { // NN+/- relative
-                        // read, calculate, then write
-                        getSetControl(framebuffer, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
-                    } else if ([argval hasPrefix:@"?"]) {
-                        // read current setting
-                        getControl(framebuffer, control_id);
-                    } else if (argval_num == argval) {
-                        // write fixed setting
-                        setControl(framebuffer, control_id, [argval intValue]);
-                    }
-                }
-                usleep(command_interval); // stagger comms to these wimpy I2C mcu's
-            }];
-
-            // done with all actions, release display's framebuffer
-            IOObjectRelease(framebuffer);
-        } else { // no display id given
+        if (0 > displayId || displayId > [_displayIDs count]) {
+            // no display id given, nothing left to do!
             NSLog(@"%@", HelpString);
+            exit(1);
         }
-    }
+
+        CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
+
+        NSString *devLoc;
+        // $ PlistBuddy -c "Print DisplayAnyUserSets:0:0:IODisplayLocation" -c "Print DisplayAnyUserSets:0:0:DisplayID" /Library/Preferences/com.apple.windowserver.plist
+        // > IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/PEG0@1/IOPP/GFX0@0/ATY,Longavi@0/AMDFramebufferVIB
+        // > 69733382
+        for (NSArray *displaySet in wsDisplaySets) {
+            for (NSDictionary *display in displaySet) {
+                if ([[display valueForKey:@"DisplayID"] integerValue] == cdisplay) {
+                    devLoc = [display valueForKey:@"IODisplayLocation"]; // kIODisplayLocationKey
+                    break;
+                }
+            }
+        }
+
+        if (!devLoc) {
+            MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
+            // we can try without this info, but we're likely to confuse identical monitors' framebuffers
+        }
+
+        // grab the IOFramebuffer for the display, this is where DDC/I2C commands are sent
+        io_service_t framebuffer;
+        if (! (framebuffer = IOFramebufferPortFromCGDisplayID(cdisplay, (__bridge CFStringRef)devLoc))) {
+            // CGDisplayIOServicePort(cdisplay) // Deprecated in OSX 10.9!
+            MyLog(@"E: Failed to acquire framebuffer device for display");
+            return -1;
+        }
+
+        MyLog(@"I: polling EDID for #%lu (ID %u => %@)", displayId, cdisplay, devLoc);
+
+        struct EDID edid = {};
+        if (EDIDTest(framebuffer, &edid)) {
+            for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors) / sizeof(edid.descriptors[0]); des++) {
+                switch (des->text.type)
+                {
+                    case 0xFF:
+                        MyLog(@"I: got edid.serial: %@", EDIDString(des->text.data));
+                        break;
+                    case 0xFC:
+                        screenName = EDIDString(des->text.data);
+                        MyLog(@"I: got edid.name: %@", screenName);
+                        break;
+                }
+            }
+        } else {
+            MyLog(@"E: Failed to poll display!");
+            IOObjectRelease(framebuffer);
+            return -1;
+        }
+
+        // Debugging
+        if (dump_values) {
+            for (uint i=0x00; i<=255; i++) {
+                getControl(framebuffer, i);
+                usleep(command_interval);
+            }
+        }
+
+        // Actions
+        [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
+            NSInteger control_id = [valueArray[0] intValue];
+            NSString *argval = valueArray[1];
+            MyLog(@"D: action: %@: %@", argname, argval);
+
+            if (control_id > -1) {
+                // this is a valid monitor control
+                NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
+                if ([argval hasPrefix:@"+"] || [argval hasPrefix:@"-"]) { // +/-NN relative
+                    getSetControl(framebuffer, control_id, argval_num, [argval substringToIndex:1]);
+                } else if ([argval hasSuffix:@"+"] || [argval hasSuffix:@"-"]) { // NN+/- relative
+                    // read, calculate, then write
+                    getSetControl(framebuffer, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
+                } else if ([argval hasPrefix:@"?"]) {
+                    // read current setting
+                    getControl(framebuffer, control_id);
+                } else if (argval_num == argval) {
+                    // write fixed setting
+                    setControl(framebuffer, control_id, [argval intValue]);
+                }
+            }
+            usleep(command_interval); // stagger comms to these wimpy I2C mcu's
+        }];
+        // done with all actions, release display's framebuffer
+        IOObjectRelease(framebuffer);
+    } // -autoreleasepool
     return 0;
-}
+} // -main
