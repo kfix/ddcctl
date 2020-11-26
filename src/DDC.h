@@ -234,8 +234,9 @@ struct EDID {
     UInt8 checksum : 8;
 };
 
-bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write);
-bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read);
-bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid);
+bool DDCWrite(io_service_t framebuffer, struct DDCWriteCommand *write);
+bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read);
+bool EDIDTest(io_service_t framebuffer, struct EDID *edid);
 UInt32 SupportedTransactionType(void);
+io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID, CFStringRef displayLocation);
 #endif

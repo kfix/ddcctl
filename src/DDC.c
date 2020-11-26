@@ -31,7 +31,7 @@ _Static_assert (0, "must build with `make (amd|intel|nvidia)`");
  replaces CGDisplayIOServicePort: https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
  based on: https://github.com/glfw/glfw/pull/192/files
  */
-static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID)
+io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID, CFStringRef displayLocation)
 {
     io_iterator_t iter;
     io_service_t serv, servicePort = 0;
@@ -45,24 +45,39 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
     while ((serv = IOIteratorNext(iter)) != MACH_PORT_NULL)
     {
         CFDictionaryRef info;
-        io_name_t	name;
-        CFIndex vendorID = 0, productID = 0, serialNumber = 0, dependID = 0, dependIndex = 0;
-        CFNumberRef vendorIDRef, productIDRef, serialNumberRef, dependIDRef, dependIndexRef;
-#ifdef DEBUG
+        CFIndex vendorID = 0, productID = 0, serialNumber = 0;
+        CFNumberRef vendorIDRef, productIDRef, serialNumberRef;
         CFStringRef location = CFSTR("");
+#ifdef DEBUG
+        CFIndex     dependID = 0, dependIndex = 0;
+        CFNumberRef dependIDRef, dependIndexRef;
+        io_name_t   name;
         CFStringRef serial = CFSTR("");
-#endif
-        Boolean success = 0;
 
         // get metadata from IOreg node
         IORegistryEntryGetName(serv, name);
         info = IODisplayCreateInfoDictionary(serv, kIODisplayOnlyPreferredName);
 
-#ifdef DEBUG
+        CFStringRef ioRegPath = IORegistryEntryCopyPath(serv,  kIOServicePlane);
+        // just location/../../ (-- /display0/AppleDisplay)
+
+        // https://stackoverflow.com/a/48450870/3878712
+        CFUUIDRef uuid = CGDisplayCreateUUIDFromDisplayID(displayID);
+        CFStringRef uuidStr = CFUUIDCreateString(NULL, uuid);
+#endif
+        Boolean success = 0;
+
+        //IORegistryEntryCopyFromPath
+        //IORegistryEntryGetProperty(serv, propName, buf, sz)
+
+        info = IODisplayCreateInfoDictionary(serv, kIODisplayOnlyPreferredName); // kIODisplayMatchingInfo
+        // IODisplayMatchDictionaries(mat, mat, NULL)
+
         /* When assigning a display ID, Quartz considers the following parameters:Vendor, Model, Serial Number and Position in the I/O Kit registry */
         // http://opensource.apple.com//source/IOGraphics/IOGraphics-179.2/IOGraphicsFamily/IOKit/graphics/IOGraphicsTypes.h
         CFStringRef locationRef = CFDictionaryGetValue(info, CFSTR(kIODisplayLocationKey));
         if (locationRef) location = CFStringCreateCopy(NULL, locationRef);
+#ifdef DEBUG
         CFStringRef serialRef = CFDictionaryGetValue(info, CFSTR(kDisplaySerialString));
         if (serialRef) serial = CFStringCreateCopy(NULL, serialRef);
 
@@ -89,12 +104,22 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
             CFRelease(info);
             continue;
         }
-        // if (framebuffer.hasDDCConnect(0)) // https://developer.apple.com/reference/kernel/ioframebuffer/1813510-hasddcconnect?language=objc
         // kAppleDisplayTypeKey -- if this is an Apple display, can use IODisplay func to change brightness: http://stackoverflow.com/a/32691700/3878712
 
         if (CFDictionaryGetValueIfPresent(info, CFSTR(kDisplaySerialNumber), (const void**)&serialNumberRef))
             CFNumberGetValue(serialNumberRef, kCFNumberCFIndexType, &serialNumber);
-
+#ifdef DEBUG
+        printf("I: Attempting match for %s's IODisplayPort @ %s...\n",
+            CFStringGetCStringPtr(uuidStr, kCFStringEncodingUTF8), CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
+#endif
+        if (displayLocation) {
+            // we were provided with a specific ioreg location we suspect the targeted framebuffer to be attached to...
+            if (!CFStringHasPrefix(location, displayLocation)) {
+                // this framebuffer doesn't reside within the provided location
+                CFRelease(info);
+                continue;
+            }
+        }
         // compare IOreg's metadata to CGDisplay's metadata to infer if the IOReg's I2C monitor is the display for the given NSScreen.displayID
         if (CGDisplayVendorNumber(displayID) != (UInt32)vendorID  ||
             CGDisplayModelNumber(displayID)  != (UInt32)productID ||
@@ -112,6 +137,7 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         // considering this IOFramebuffer as the match for the CGDisplay, dump out its information
         // compare with `make displaylist`
         printf("\nFramebuffer: %s\n", name);
+        printf("%s\n", CFStringGetCStringPtr(ioRegPath, kCFStringEncodingUTF8));
         printf("%s\n", CFStringGetCStringPtr(location, kCFStringEncodingUTF8));
         printf("VN:%ld PN:%ld SN:%ld", vendorID, productID, serialNumber);
         printf(" UN:%d", CGDisplayUnitNumber(displayID));
@@ -130,50 +156,45 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
     return servicePort;
 }
 
-dispatch_semaphore_t DisplayQueue(CGDirectDisplayID displayID) {
+dispatch_semaphore_t I2CRequestQueue(io_service_t i2c_device_id) {
     static UInt64 queueCount = 0;
-    static struct DDCQueue {CGDirectDisplayID id; dispatch_semaphore_t queue;} *queues = NULL;
+    static struct ReqQueue {uint32_t id; dispatch_semaphore_t queue;} *queues = NULL;
     dispatch_semaphore_t queue = NULL;
     if (!queues)
         queues = calloc(50, sizeof(*queues)); //FIXME: specify
     UInt64 i = 0;
     while (i < queueCount)
-        if (queues[i].id == displayID)
+        if (queues[i].id == i2c_device_id)
             break;
         else
             i++;
-    if (queues[i].id == displayID)
+    if (queues[i].id == i2c_device_id)
         queue = queues[i].queue;
     else
-        queues[queueCount++] = (struct DDCQueue){displayID, (queue = dispatch_semaphore_create(1))};
+        queues[queueCount++] = (struct ReqQueue){i2c_device_id, (queue = dispatch_semaphore_create(1))};
     return queue;
 }
 
-bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
-    dispatch_semaphore_t queue = DisplayQueue(displayID);
+bool FramebufferI2CRequest(io_service_t framebuffer, IOI2CRequest *request) {
+    dispatch_semaphore_t queue = I2CRequestQueue(framebuffer);
     dispatch_semaphore_wait(queue, DISPATCH_TIME_FOREVER);
     bool result = false;
-    io_service_t framebuffer; // https://developer.apple.com/reference/kernel/ioframebuffer
-    //if ((framebuffer = CGDisplayIOServicePort(displayID))) { // Deprecated in OSX 10.9
-    if ((framebuffer = IOFramebufferPortFromCGDisplayID(displayID))) {
-        IOItemCount busCount;
-        if (IOFBGetI2CInterfaceCount(framebuffer, &busCount) == KERN_SUCCESS) {
-            IOOptionBits bus = 0;
-            while (bus < busCount) {
-                io_service_t interface;
-                if (IOFBCopyI2CInterfaceForBus(framebuffer, bus++, &interface) != KERN_SUCCESS)
-                    continue;
+    IOItemCount busCount;
+    if (IOFBGetI2CInterfaceCount(framebuffer, &busCount) == KERN_SUCCESS) {
+        IOOptionBits bus = 0;
+        while (bus < busCount) {
+            io_service_t interface;
+            if (IOFBCopyI2CInterfaceForBus(framebuffer, bus++, &interface) != KERN_SUCCESS)
+                continue;
 
-                IOI2CConnectRef connect;
-                if (IOI2CInterfaceOpen(interface, kNilOptions, &connect) == KERN_SUCCESS) {
-                    result = (IOI2CSendRequest(connect, kNilOptions, request) == KERN_SUCCESS);
-                    IOI2CInterfaceClose(connect, kNilOptions);
-                }
-                IOObjectRelease(interface);
-                if (result) break;
+            IOI2CConnectRef connect;
+            if (IOI2CInterfaceOpen(interface, kNilOptions, &connect) == KERN_SUCCESS) {
+                result = (IOI2CSendRequest(connect, kNilOptions, request) == KERN_SUCCESS);
+                IOI2CInterfaceClose(connect, kNilOptions);
             }
+            IOObjectRelease(interface);
+            if (result) break;
         }
-        IOObjectRelease(framebuffer);
     }
     if (request->replyTransactionType == kIOI2CNoTransactionType)
         usleep(20000);
@@ -181,7 +202,7 @@ bool DisplayRequest(CGDirectDisplayID displayID, IOI2CRequest *request) {
     return result && request->result == KERN_SUCCESS;
 }
 
-bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
+bool DDCWrite(io_service_t framebuffer, struct DDCWriteCommand *write) {
     IOI2CRequest    request;
     UInt8           data[128];
 
@@ -205,11 +226,11 @@ bool DDCWrite(CGDirectDisplayID displayID, struct DDCWriteCommand *write) {
     request.replyTransactionType            = kIOI2CNoTransactionType;
     request.replyBytes                      = 0;
 
-    bool result = DisplayRequest(displayID, &request);
+    bool result = FramebufferI2CRequest(framebuffer, &request);
     return result;
 }
 
-bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
+bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
     IOI2CRequest request;
     UInt8 reply_data[11] = {};
     bool result = false;
@@ -249,7 +270,7 @@ bool DDCRead(CGDirectDisplayID displayID, struct DDCReadCommand *read) {
         request.replyBuffer = (vm_address_t) reply_data;
         request.replyBytes = sizeof(reply_data);
 
-        result = DisplayRequest(displayID, &request);
+        result = FramebufferI2CRequest(framebuffer, &request);
         result = (result && reply_data[0] == request.sendAddress && reply_data[2] == 0x2 && reply_data[4] == read->control_id && reply_data[10] == (request.replyAddress ^ request.replySubAddress ^ reply_data[1] ^ reply_data[2] ^ reply_data[3] ^ reply_data[4] ^ reply_data[5] ^ reply_data[6] ^ reply_data[7] ^ reply_data[8] ^ reply_data[9]));
 
         if (result) { // checksum is ok
@@ -388,7 +409,7 @@ UInt32 SupportedTransactionType() {
 }
 
 
-bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid) {
+bool EDIDTest(io_service_t framebuffer, struct EDID *edid) {
     IOI2CRequest request = {};
 /*! from https://opensource.apple.com/source/IOGraphics/IOGraphics-513.1/IOGraphicsFamily/IOKit/i2c/IOI2CInterface.h.auto.html
  *  not in https://developer.apple.com/reference/kernel/1659924-ioi2cinterface.h/ioi2crequest?changes=latest_beta&language=objc
@@ -433,7 +454,7 @@ bool EDIDTest(CGDirectDisplayID displayID, struct EDID *edid) {
     request.replyTransactionType = kIOI2CSimpleTransactionType;
     request.replyBuffer = (vm_address_t) data;
     request.replyBytes = sizeof(data);
-    if (!DisplayRequest(displayID, &request)) return false;
+    if (!FramebufferI2CRequest(framebuffer, &request)) return false;
     if (edid) memcpy(edid, &data, 128);
     UInt32 i = 0;
     UInt8 sum = 0;
