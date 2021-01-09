@@ -114,12 +114,10 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
     NSNumber *set_value = [exp expressionValueWithObject:nil context:nil];
 
     // validate and write
-    if (set_value.intValue >= 0 && set_value.intValue <= command.max_value) {
-        MyLog(@"D: relative setting: %@ = %d", formula, set_value.intValue);
-        setControl(cdisplay, control_id, set_value.unsignedIntValue);
-    } else {
-        MyLog(@"D: relative setting: %@ = %d is out of range!", formula, set_value.intValue);
-    }
+
+    int clamped_value = MIN(MAX(set_value.intValue, 0), command.max_value);
+    MyLog(@"D: relative setting: %@ = %d (clamped to 0, %d)", formula, clamped_value, command.max_value);
+    setControl(cdisplay, control_id, (uint) clamped_value);
 }
 
 /* Main function */

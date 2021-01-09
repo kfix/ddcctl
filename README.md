@@ -1,12 +1,12 @@
 ddcctl: DDC monitor controls for the OSX command line
 ----
-Adjust your external monitors' built-in controls from the OSX shell:  
-* brightness  
-* contrast  
+Adjust your external monitors' built-in controls from the OSX shell:
+* brightness
+* contrast
 
-And *possibly* (if your monitor firmware is well implemented):  
+And *possibly* (if your monitor firmware is well implemented):
 * input source
-* built-in speaker volume  
+* built-in speaker volume
 * on/off/standby
 * rgb colors
 * color presets
@@ -20,9 +20,9 @@ Install
 
 Usage
 ----
-Run `ddcctl -h` for some options.  
-[ddcctl.sh](/ddcctl.sh) is a script I use to control two PC monitors plugged into my Mac Mini.  
-You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets.  
+Run `ddcctl -h` for some options.
+[ddcctl.sh](/scripts/ddcctl.sh) is a script I use to control two PC monitors plugged into my Mac Mini.
+You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets.
 
 Input Sources
 ----
@@ -52,8 +52,8 @@ When setting input source, refer to the table below to determine which value to 
 
 Credits
 ----
-`ddcctl.m` sprang from a [forum thread](https://www.tonymacx86.com/threads/controlling-your-monitor-with-osx-ddc-panel.90077/page-6#post-795208) on the TonyMac-x86 boards.  
+`ddcctl.m` sprang from a [forum thread](https://www.tonymacx86.com/threads/controlling-your-monitor-with-osx-ddc-panel.90077/page-6#post-795208) on the TonyMac-x86 boards.
 
-`DDC.c` originated from [jontaylor/DDC-CI-Tools-for-OS-X](https://github.com/jontaylor/DDC-CI-Tools-for-OS-X), but was reworked by others on the forums.  
+`DDC.c` originated from [jontaylor/DDC-CI-Tools-for-OS-X](https://github.com/jontaylor/DDC-CI-Tools-for-OS-X), but was reworked by others on the forums.
 
 A few forks have also backported patches, which is *nice* :ok_hand:.

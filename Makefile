@@ -12,7 +12,20 @@ CCFLAGS ?= -Wno-unused-variable
 ##  provided by https://github.com/zulu-entertainment/OSDisplay
 #CCFLAGS += -DOSD
 
-all: clean ddcctl
+INSTALL_DIR = /usr/local/bin
+SOURCE_DIR = ./src
+
+ifneq "$(strip $(filter debug, $(MAKECMDGOALS)))" ""
+	CCFLAGS += -DDEBUG
+	BUILD_DIR = ./build/debug
+	PRODUCT_DIR = ./bin/debug
+else
+	CCFLAGS += -O3
+	BUILD_DIR = ./build/release
+	PRODUCT_DIR = ./bin/release
+endif
+
+all: clean $(PRODUCT_DIR)/ddcctl
 
 intel nvidia: CCFLAGS += -DkDDCMinReplyDelay=1
 intel nvidia: all
@@ -20,20 +33,21 @@ intel nvidia: all
 amd: CCFLAGS += -DkDDCMinReplyDelay=30000000
 amd: all
 
-debug: CCFLAGS += -DDEBUG
-debug: clean ddcctl
+debug: clean
 
-%.o: %.c
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
+	@mkdir -p $(@D)
 	$(CC) -Wall $(CCFLAGS) -c -o $@ $<
 
-ddcctl: DDC.o
-	$(CC) -Wall $(CCFLAGS) -o $@ -lobjc -framework IOKit -framework AppKit -framework Foundation $< $@.m
+$(PRODUCT_DIR)/ddcctl: $(BUILD_DIR)/DDC.o
+	@mkdir -p $(@D)
+	$(CC) -Wall $(CCFLAGS) -o $@ -lobjc -framework IOKit -framework AppKit -framework Foundation $< $(SOURCE_DIR)/$(@F).m
 
-install: ddcctl
-	install ddcctl /usr/local/bin
+install: $(PRODUCT_DIR)/ddcctl
+	install $(PRODUCT_DIR)/ddcctl $(INSTALL_DIR)
 
 clean:
-	$(RM) *.o ddcctl
+	$(RM) $(BUILD_DIR)/*.o $(PRODUCT_DIR)/ddcctl
 
 framebuffers:
 	ioreg -c IOFramebuffer -k IOFBI2CInterfaceIDs -b -f -l -r -d 1
@@ -41,4 +55,5 @@ framebuffers:
 displaylist:
 	ioreg -c IODisplayConnect -b -f -r -l -i -d 2
 
-.PHONY: all clean install displaylist amd intel nvidia
+.PHONY: all debug clean install displaylist amd intel nvidia
+

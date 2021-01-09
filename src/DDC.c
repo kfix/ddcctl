@@ -82,6 +82,10 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
 
         if (!success || busCount < 1 || CGDisplayIsBuiltin(displayID)) {
             // this does not seem to be a DDC-enabled display, skip it
+#ifdef DEBUG
+            CFRelease(location);
+            CFRelease(serial);
+#endif
             CFRelease(info);
             continue;
         }
@@ -96,6 +100,10 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
             CGDisplayModelNumber(displayID)  != (UInt32)productID ||
             CGDisplaySerialNumber(displayID) != (UInt32)serialNumber) // SN is zero in lots of cases, so duplicate-monitors can confuse us :-/
         {
+#ifdef DEBUG
+            CFRelease(location);
+            CFRelease(serial);
+#endif
             CFRelease(info);
             continue;
         }
@@ -110,6 +118,8 @@ static io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID
         printf(" IN:%d", iter);
         printf(" depID:%ld depIdx:%ld", dependID, dependIndex);
         printf(" Serial:%s\n\n", CFStringGetCStringPtr(serial, kCFStringEncodingUTF8));
+        CFRelease(location);
+        CFRelease(serial);
 #endif
         servicePort = serv;
         CFRelease(info);
