@@ -28,12 +28,12 @@ respectively for Intel, AMD and Nvidia GPUs.
 
 # Usage #
 Run `ddcctl -h` for some options.  
-[ddcctl.sh](/scripts/ddcctl.sh) is a script I use to control two PC monitors plugged into my Mac Mini.
+[ddcctl.sh](/scripts/ddcctl.sh) is a script I use to control two PC monitors plugged into my Mac Mini.  
 You can point Alfred, ControlPlane, or Karabiner at it to quickly switch presets.
 
 # Input Sources #
-When setting input source, refer to the table below to determine which value to
-use. For example, to set your first display to HDMI: `ddcctl -d 1 -i 17`.
+When setting input source, refer to the table below to determine which value to use.  
+For example, to set your first display to HDMI: `ddcctl -d 1 -i 17`.
 
 | Input Source | Value        |
 | ------------- |-------------|
@@ -58,8 +58,7 @@ use. For example, to set your first display to HDMI: `ddcctl -d 1 -i 17`.
 | USB-C | 27 |
 
 # Credits #
-`ddcctl.m` sprang from a
-[forum thread](https://www.tonymacx86.com/threads/controlling-your-monitor-with-osx-ddc-panel.90077/page-6#post-795208) on the TonyMac-x86 boards.
+`ddcctl.m` sprang from a [forum thread](https://www.tonymacx86.com/threads/controlling-your-monitor-with-osx-ddc-panel.90077/page-6#post-795208) on the TonyMac-x86 boards.
 
 `DDC.c` originated from [jontaylor/DDC-CI-Tools-for-OS-X](https://github.com/jontaylor/DDC-CI-Tools-for-OS-X), but was reworked by others on the forums.  
 
