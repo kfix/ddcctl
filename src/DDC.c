@@ -66,11 +66,7 @@ io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID, CFStr
 #endif
         Boolean success = 0;
 
-        //IORegistryEntryCopyFromPath
-        //IORegistryEntryGetProperty(serv, propName, buf, sz)
-
         info = IODisplayCreateInfoDictionary(serv, kIODisplayOnlyPreferredName); // kIODisplayMatchingInfo
-        // IODisplayMatchDictionaries(mat, mat, NULL)
 
         /* When assigning a display ID, Quartz considers the following parameters:Vendor, Model, Serial Number and Position in the I/O Kit registry */
         // http://opensource.apple.com//source/IOGraphics/IOGraphics-179.2/IOGraphicsFamily/IOKit/graphics/IOGraphicsTypes.h
