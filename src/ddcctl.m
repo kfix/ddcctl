@@ -29,6 +29,7 @@ int blacklistedDeviceWithNumber;
 bool useOsd;
 #endif
 
+extern io_service_t CGDisplayIOServicePort(CGDirectDisplayID display) __attribute__((weak_import));
 
 NSString *EDIDString(char *string)
 {
@@ -395,13 +396,13 @@ int main(int argc, const char * argv[])
         // find & grab the IOFramebuffer for the display, the IOFB is where DDC/I2C commands are sent
         io_service_t framebuffer = 0;
         NSString *devLoc = getDisplayDeviceLocation(cdisplay);
-        if (!devLoc) {
-            // fuzzy-matching discovery of the device location failed, so try using the
-            // legacy API call to get the IOFB's service port
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-           // this API was deprecated after macOS 10.9:
-           //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+        if (!devLoc && CGDisplayIOServicePort != NULL) {
+            // fuzzy-matching discovery of the device location failed, so try using the
+            // legacy API call to get the IOFB's service port
+            // this API was deprecated after macOS 10.9:
+            //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
             framebuffer = CGDisplayIOServicePort(cdisplay);
 #pragma clang diagnostic pop
         }
