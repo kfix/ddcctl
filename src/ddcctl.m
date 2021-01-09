@@ -403,10 +403,8 @@ int main(int argc, const char * argv[])
         NSString *devLoc = getDisplayDeviceLocation(cdisplay);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        if (!devLoc && CGDisplayIOServicePort != NULL) {
-            // fuzzy-matching discovery of the device location failed, so try using the
-            // legacy API call to get the IOFB's service port
-            // this API was deprecated after macOS 10.9:
+        if (CGDisplayIOServicePort != NULL) {
+            // legacy API call to get the IOFB's service port, was deprecated after macOS 10.9:
             //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
             framebuffer = CGDisplayIOServicePort(cdisplay);
 #pragma clang diagnostic pop
