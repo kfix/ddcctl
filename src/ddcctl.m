@@ -36,6 +36,39 @@ NSString *EDIDString(char *string)
     return ([temp rangeOfString:@"\n"].location != NSNotFound) ? [[temp componentsSeparatedByString:@"\n"] objectAtIndex:0] : temp;
 }
 
+NSString *getDisplayDeviceLocation(CGDirectDisplayID cdisplay)
+{
+    // get the WindowServer's table of DisplayIds -> IODisplays
+    NSString *wsPrefs = @"/Library/Preferences/com.apple.windowserver.plist";
+    NSDictionary *wsDict = [NSDictionary dictionaryWithContentsOfFile:wsPrefs];
+    if (!wsDict)
+    {
+        MyLog(@"E: Failed to parse WindowServer's preferences! (%@)", wsPrefs);
+        return NULL;
+    }
+
+    NSArray *wsDisplaySets = [wsDict valueForKey:@"DisplayAnyUserSets"];
+    if (!wsDisplaySets)
+    {
+        MyLog(@"E: Failed to get 'DisplayAnyUserSets' key from WindowServer's preferences! (%@)", wsPrefs);
+        return NULL;
+    }
+
+    // $ PlistBuddy -c "Print DisplayAnyUserSets:0:0:IODisplayLocation" -c "Print DisplayAnyUserSets:0:0:DisplayID" /Library/Preferences/com.apple.windowserver.plist
+    // > IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/PEG0@1/IOPP/GFX0@0/ATY,Longavi@0/AMDFramebufferVIB
+    // > 69733382
+    for (NSArray *displaySet in wsDisplaySets) {
+        for (NSDictionary *display in displaySet) {
+            if ([[display valueForKey:@"DisplayID"] integerValue] == cdisplay) {
+                return [display valueForKey:@"IODisplayLocation"]; // kIODisplayLocationKey
+            }
+        }
+    }
+
+    MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
+    return NULL;
+}
+
 /* Get current value for control from display */
 uint getControl(CGDirectDisplayID cdisplay, uint control_id)
 {
@@ -158,6 +191,13 @@ int main(int argc, const char * argv[])
                           rotation,
                           (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
                 }
+
+#ifdef DEBUG
+                NSString *devLoc = getDisplayDeviceLocation(screenNumber);
+                if (devLoc) {
+                    MyLog(@"D:   -> location %@", devLoc);
+                }
+#endif
             }
         }
         MyLog(@"I: found %lu external display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
@@ -344,15 +384,6 @@ int main(int argc, const char * argv[])
             }
         }
 
-        // get the WindowServer's table of DisplayIds -> IODisplays
-        NSString *wsPrefs = @"/Library/Preferences/com.apple.windowserver.plist";
-        NSDictionary *wsDict = [NSDictionary dictionaryWithContentsOfFile:wsPrefs];
-        if (!wsDict)
-            MyLog(@"E: Failed to parse WindowServer's preferences! (%@)", wsPrefs);
-        NSArray *wsDisplaySets = [wsDict valueForKey:@"DisplayAnyUserSets"];
-        if (!wsDisplaySets)
-            MyLog(@"E: Failed to get 'DisplayAnyUserSets' key from WindowServer's preferences! (%@)", wsPrefs);
-
         if (0 > displayId || displayId > [_displayIDs count]) {
             // no display id given, nothing left to do!
             NSLog(@"%@", HelpString);
@@ -361,23 +392,10 @@ int main(int argc, const char * argv[])
 
         CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
 
-        NSString *devLoc;
-        // $ PlistBuddy -c "Print DisplayAnyUserSets:0:0:IODisplayLocation" -c "Print DisplayAnyUserSets:0:0:DisplayID" /Library/Preferences/com.apple.windowserver.plist
-        // > IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/PEG0@1/IOPP/GFX0@0/ATY,Longavi@0/AMDFramebufferVIB
-        // > 69733382
-        for (NSArray *displaySet in wsDisplaySets) {
-            for (NSDictionary *display in displaySet) {
-                if ([[display valueForKey:@"DisplayID"] integerValue] == cdisplay) {
-                    devLoc = [display valueForKey:@"IODisplayLocation"]; // kIODisplayLocationKey
-                    break;
-                }
-            }
-        }
-
         // find & grab the IOFramebuffer for the display, the IOFB is where DDC/I2C commands are sent
         io_service_t framebuffer = 0;
+        NSString *devLoc = getDisplayDeviceLocation(cdisplay);
         if (!devLoc) {
-            MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
             // fuzzy-matching discovery of the device location failed, so try using the
             // legacy API call to get the IOFB's service port
 #pragma clang diagnostic push
