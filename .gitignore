@@ -1,2 +1,5 @@
-ddcctl
-*.o
+.DS_Store
+bin/
+build/
+*.xcworkspace/
+xc*data/

@@ -1,0 +1,458 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8FB2F43F253CA13D0005A241 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41B253C9F8F0005A241 /* IOKit.framework */; };
+		8FB2F440253CA1480005A241 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41F253C9F990005A241 /* Foundation.framework */; };
+		8FB2F441253CA15D0005A241 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41D253C9F930005A241 /* AppKit.framework */; };
+		8FB2F442253CA17B0005A241 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41D253C9F930005A241 /* AppKit.framework */; };
+		8FB2F443253CA17B0005A241 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41F253C9F990005A241 /* Foundation.framework */; };
+		8FB2F444253CA17B0005A241 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41B253C9F8F0005A241 /* IOKit.framework */; };
+		8FB2F445253CA1860005A241 /* ddcctl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40C253C9DA20005A241 /* ddcctl.m */; };
+		8FB2F446253CA1860005A241 /* DDC.h in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40E253C9DA20005A241 /* DDC.h */; };
+		8FB2F447253CA1860005A241 /* DDC.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F410253C9DA20005A241 /* DDC.c */; };
+		8FB2F44A253CA1960005A241 /* ddcctl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40C253C9DA20005A241 /* ddcctl.m */; };
+		8FB2F44B253CA1960005A241 /* DDC.h in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40E253C9DA20005A241 /* DDC.h */; };
+		8FB2F44C253CA1960005A241 /* DDC.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F410253C9DA20005A241 /* DDC.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8FB2F426253CA0B90005A241 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		8FB2F434253CA0D80005A241 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		8FB2F40C253C9DA20005A241 /* ddcctl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ddcctl.m; sourceTree = "<group>"; };
+		8FB2F40E253C9DA20005A241 /* DDC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DDC.h; sourceTree = "<group>"; };
+		8FB2F410253C9DA20005A241 /* DDC.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = DDC.c; sourceTree = "<group>"; };
+		8FB2F41B253C9F8F0005A241 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		8FB2F41D253C9F930005A241 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		8FB2F41F253C9F990005A241 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		8FB2F428253CA0B90005A241 /* ddcctl-amd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "ddcctl-amd"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "ddcctl-intel_nvidia"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8FB2F425253CA0B90005A241 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FB2F440253CA1480005A241 /* Foundation.framework in Frameworks */,
+				8FB2F441253CA15D0005A241 /* AppKit.framework in Frameworks */,
+				8FB2F43F253CA13D0005A241 /* IOKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8FB2F433253CA0D80005A241 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FB2F443253CA17B0005A241 /* Foundation.framework in Frameworks */,
+				8FB2F442253CA17B0005A241 /* AppKit.framework in Frameworks */,
+				8FB2F444253CA17B0005A241 /* IOKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		8FB2F3F6253C9D750005A241 = {
+			isa = PBXGroup;
+			children = (
+				8FB2F40B253C9DA20005A241 /* src */,
+				8FB2F400253C9D750005A241 /* Products */,
+				8FB2F41A253C9F8E0005A241 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		8FB2F400253C9D750005A241 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8FB2F428253CA0B90005A241 /* ddcctl-amd */,
+				8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8FB2F40B253C9DA20005A241 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				8FB2F40C253C9DA20005A241 /* ddcctl.m */,
+				8FB2F40E253C9DA20005A241 /* DDC.h */,
+				8FB2F410253C9DA20005A241 /* DDC.c */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		8FB2F41A253C9F8E0005A241 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8FB2F41F253C9F990005A241 /* Foundation.framework */,
+				8FB2F41D253C9F930005A241 /* AppKit.framework */,
+				8FB2F41B253C9F8F0005A241 /* IOKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8FB2F427253CA0B90005A241 /* ddcctl-amd */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl-amd" */;
+			buildPhases = (
+				8FB2F424253CA0B90005A241 /* Sources */,
+				8FB2F425253CA0B90005A241 /* Frameworks */,
+				8FB2F426253CA0B90005A241 /* CopyFiles */,
+				8FB2F459253CA6F80005A241 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "ddcctl-amd";
+			productName = "ddcctl-amd";
+			productReference = 8FB2F428253CA0B90005A241 /* ddcctl-amd */;
+			productType = "com.apple.product-type.tool";
+		};
+		8FB2F435253CA0D80005A241 /* ddcctl-intel_nvidia */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8FB2F43A253CA0D80005A241 /* Build configuration list for PBXNativeTarget "ddcctl-intel_nvidia" */;
+			buildPhases = (
+				8FB2F432253CA0D80005A241 /* Sources */,
+				8FB2F433253CA0D80005A241 /* Frameworks */,
+				8FB2F434253CA0D80005A241 /* CopyFiles */,
+				8FB2F466253CAA230005A241 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "ddcctl-intel_nvidia";
+			productName = "ddcctl-intel_nvidia";
+			productReference = 8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8FB2F3F7253C9D750005A241 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1200;
+				TargetAttributes = {
+					8FB2F427253CA0B90005A241 = {
+						CreatedOnToolsVersion = 12.0.1;
+					};
+					8FB2F435253CA0D80005A241 = {
+						CreatedOnToolsVersion = 12.0.1;
+					};
+				};
+			};
+			buildConfigurationList = 8FB2F3FA253C9D750005A241 /* Build configuration list for PBXProject "ddcctl" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 8FB2F3F6253C9D750005A241;
+			productRefGroup = 8FB2F400253C9D750005A241 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8FB2F427253CA0B90005A241 /* ddcctl-amd */,
+				8FB2F435253CA0D80005A241 /* ddcctl-intel_nvidia */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		8FB2F459253CA6F80005A241 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"$INSTALL_DIR\"\nln -s \"$TARGET_NAME\" \"$PROJECT_NAME\"\n";
+		};
+		8FB2F466253CAA230005A241 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 8;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"$INSTALL_DIR\"\nln -s \"$TARGET_NAME\" \"$PROJECT_NAME\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8FB2F424253CA0B90005A241 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FB2F44A253CA1960005A241 /* ddcctl.m in Sources */,
+				8FB2F44B253CA1960005A241 /* DDC.h in Sources */,
+				8FB2F44C253CA1960005A241 /* DDC.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8FB2F432253CA0D80005A241 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FB2F445253CA1860005A241 /* ddcctl.m in Sources */,
+				8FB2F446253CA1860005A241 /* DDC.h in Sources */,
+				8FB2F447253CA1860005A241 /* DDC.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8FB2F404253C9D750005A241 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INSTALL_PATH = /bin;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = (
+					"-DkDDCMinReplyDelay=1",
+					"-Wall",
+					"-Wextra",
+				);
+				SDKROOT = macosx;
+				SYMROOT = "$(SRCROOT)/build";
+			};
+			name = Debug;
+		};
+		8FB2F405253C9D750005A241 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				DSTROOT = "$(HOME)";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INSTALL_PATH = /bin;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = (
+					"-DkDDCMinReplyDelay=1",
+					"-Wall",
+					"-Wextra",
+				);
+				SDKROOT = macosx;
+				SYMROOT = "$(SRCROOT)/build";
+			};
+			name = Release;
+		};
+		8FB2F42D253CA0B90005A241 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				OTHER_CFLAGS = (
+					"-DkDDCMinReplyDelay=30000000",
+					"-Wall",
+					"-Wextra",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		8FB2F42E253CA0B90005A241 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				OTHER_CFLAGS = (
+					"-DkDDCMinReplyDelay=30000000",
+					"-Wall",
+					"-Wextra",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		8FB2F43B253CA0D80005A241 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		8FB2F43C253CA0D80005A241 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8FB2F3FA253C9D750005A241 /* Build configuration list for PBXProject "ddcctl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8FB2F404253C9D750005A241 /* Debug */,
+				8FB2F405253C9D750005A241 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl-amd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8FB2F42D253CA0B90005A241 /* Debug */,
+				8FB2F42E253CA0B90005A241 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8FB2F43A253CA0D80005A241 /* Build configuration list for PBXNativeTarget "ddcctl-intel_nvidia" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8FB2F43B253CA0D80005A241 /* Debug */,
+				8FB2F43C253CA0D80005A241 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8FB2F3F7253C9D750005A241 /* Project object */;
+}
