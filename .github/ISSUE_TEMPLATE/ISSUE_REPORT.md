@@ -22,19 +22,7 @@ I _will_ close reports about these issues out-of-hand:
 ### __MY HACKINTOSH <whatever>__:  
 You're on your own with Hackintoshes.  
 
-### __I HAVE TWO IDENTICAL MONITORS AND ONE DOESN'T WORK__:  
-This is already known: #17  
-
-No patch has been submitted to resolve this, but the essential facts have  
-been gathered to work from.  
-
-Any suggestion to revert the master branch to an obsolete version  
-to work-around this will be rejected.  
-
-Release and mantain your own fork if this bothers you.  
-I do not work for you and will not be providing backports for your convienience.  
-
-### __YOUR PC MONITOR MAY SUCK AT DDC__  
+### __YOUR MONITOR MAY NOT CORRECTLY SUPPORT MUCH OF DDC__  
 The DDC standard is very loosely implemented by monitor manufacturers beyond sleeping the display.  
 * This is because Windows doesn't use brightness sensors to dim screens like OSX does —via USB, not DDC!
 * Adjusting brightness, contrast, and super-awesome-multimedia-frobber-mode may not be possible.  

@@ -29,11 +29,50 @@ int blacklistedDeviceWithNumber;
 bool useOsd;
 #endif
 
+extern io_service_t CGDisplayIOServicePort(CGDirectDisplayID display) __attribute__((weak_import));
 
 NSString *EDIDString(char *string)
 {
     NSString *temp = [[NSString alloc] initWithBytes:string length:13 encoding:NSASCIIStringEncoding];
     return ([temp rangeOfString:@"\n"].location != NSNotFound) ? [[temp componentsSeparatedByString:@"\n"] objectAtIndex:0] : temp;
+}
+
+NSString *getDisplayDeviceLocation(CGDirectDisplayID cdisplay)
+{
+    // FIXME: scraping prefs files is vulnerable to use of stale data?
+    // TODO: try shelling `system_profiler SPDisplaysDataType -xml` to get "_spdisplays_displayPath" keys
+    //    this seems to use private routines in:
+    //      /System/Library/SystemProfiler/SPDisplaysReporter.spreporter/Contents/MacOS/SPDisplaysReporter
+
+    // get the WindowServer's table of DisplayIds -> IODisplays
+    NSString *wsPrefs = @"/Library/Preferences/com.apple.windowserver.plist";
+    NSDictionary *wsDict = [NSDictionary dictionaryWithContentsOfFile:wsPrefs];
+    if (!wsDict)
+    {
+        MyLog(@"E: Failed to parse WindowServer's preferences! (%@)", wsPrefs);
+        return NULL;
+    }
+
+    NSArray *wsDisplaySets = [wsDict valueForKey:@"DisplayAnyUserSets"];
+    if (!wsDisplaySets)
+    {
+        MyLog(@"E: Failed to get 'DisplayAnyUserSets' key from WindowServer's preferences! (%@)", wsPrefs);
+        return NULL;
+    }
+
+    // $ PlistBuddy -c "Print DisplayAnyUserSets:0:0:IODisplayLocation" -c "Print DisplayAnyUserSets:0:0:DisplayID" /Library/Preferences/com.apple.windowserver.plist
+    // > IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/PEG0@1/IOPP/GFX0@0/ATY,Longavi@0/AMDFramebufferVIB
+    // > 69733382
+    for (NSArray *displaySet in wsDisplaySets) {
+        for (NSDictionary *display in displaySet) {
+            if ([[display valueForKey:@"DisplayID"] integerValue] == cdisplay) {
+                return [display valueForKey:@"IODisplayLocation"]; // kIODisplayLocationKey
+            }
+        }
+    }
+
+    MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
+    return NULL;
 }
 
 /* Get current value for control from display */
@@ -55,14 +94,14 @@ uint getControl(CGDirectDisplayID cdisplay, uint control_id)
 }
 
 /* Set new value for control from display */
-void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
+void setControl(io_service_t framebuffer, uint control_id, uint new_value)
 {
     struct DDCWriteCommand command;
     command.control_id = control_id;
     command.new_value = new_value;
 
     MyLog(@"D: setting VCP control #%u => %u", command.control_id, command.new_value);
-    if (!DDCWrite(cdisplay, &command)){
+    if (!DDCWrite(framebuffer, &command)){
         MyLog(@"E: Failed to send DDC command!");
     }
 #ifdef OSD
@@ -91,7 +130,7 @@ void setControl(CGDirectDisplayID cdisplay, uint control_id, uint new_value)
 }
 
 /* Get current value to Set relative value for control from display */
-void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_value, NSString *operator)
+void getSetControl(io_service_t framebuffer, uint control_id, NSString *new_value, NSString *operator)
 {
     struct DDCReadCommand command;
     command.control_id = control_id;
@@ -101,7 +140,7 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
     // read
     MyLog(@"D: querying VCP control: #%u =?", command.control_id);
 
-    if (!DDCRead(cdisplay, &command)) {
+    if (!DDCRead(framebuffer, &command)) {
         MyLog(@"E: DDC send command failed!");
         MyLog(@"E: VCP control #%u (0x%02hhx) = current: %u, max: %u", command.control_id, command.control_id, command.current_value, command.max_value);
     } else {
@@ -114,10 +153,9 @@ void getSetControl(CGDirectDisplayID cdisplay, uint control_id, NSString *new_va
     NSNumber *set_value = [exp expressionValueWithObject:nil context:nil];
 
     // validate and write
-
     int clamped_value = MIN(MAX(set_value.intValue, 0), command.max_value);
     MyLog(@"D: relative setting: %@ = %d (clamped to 0, %d)", formula, clamped_value, command.max_value);
-    setControl(cdisplay, control_id, (uint) clamped_value);
+    setControl(framebuffer, control_id, (uint) clamped_value);
 }
 
 /* Main function */
@@ -134,26 +172,38 @@ int main(int argc, const char * argv[])
             if ([description objectForKey:@"NSDeviceIsScreen"]) {
                 CGDirectDisplayID screenNumber = [[description objectForKey:@"NSScreenNumber"] unsignedIntValue];
                 if (CGDisplayIsBuiltin(screenNumber)) continue; // ignore MacBook screens because the lid can be closed and they don't use DDC.
+                // https://stackoverflow.com/a/48450870/3878712
+                CFUUIDRef screenUUID = CGDisplayCreateUUIDFromDisplayID(screenNumber);
+                CFStringRef screenUUIDstr = CFUUIDCreateString(NULL, screenUUID);
                 [_displayIDs addPointer:(void *)(UInt64)screenNumber];
                 NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
                 CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); // dspPhySz only valid if EDID present!
                 float displayScale = [screen backingScaleFactor];
                 double rotation = CGDisplayRotation(screenNumber);
                 if (displayScale > 1) {
-                    MyLog(@"D: NSScreen #%u (%.0fx%.0f %g°) HiDPI",
+                    MyLog(@"D: CGDisplay %@ dispID(#%u) (%.0fx%.0f %g°) HiDPI",
+                          screenUUIDstr,
                           screenNumber,
                           displayPixelSize.width,
                           displayPixelSize.height,
                           rotation);
                 }
                 else {
-                    MyLog(@"D: NSScreen #%u (%.0fx%.0f %g°) %0.2f DPI",
+                    MyLog(@"D: CGDisplay %@ dispID(#%u) (%.0fx%.0f %g°) %0.2f DPI",
+                          screenUUIDstr,
                           screenNumber,
                           displayPixelSize.width,
                           displayPixelSize.height,
                           rotation,
                           (displayPixelSize.width / displayPhysicalSize.width) * 25.4f); // there being 25.4 mm in an inch
                 }
+
+#ifdef DEBUG
+                NSString *devLoc = getDisplayDeviceLocation(screenNumber);
+                if (devLoc) {
+                    MyLog(@"D:   -> location %@", devLoc);
+                }
+#endif
             }
         }
         MyLog(@"I: found %lu external display%@", [_displayIDs count], [_displayIDs count] > 1 ? @"s" : @"");
@@ -340,66 +390,92 @@ int main(int argc, const char * argv[])
             }
         }
 
-
-        // Let's go...
-        if (0 < displayId && displayId <= [_displayIDs count]) {
-            MyLog(@"I: polling display %lu's EDID", displayId);
-            CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
-            struct EDID edid = {};
-            if (EDIDTest(cdisplay, &edid)) {
-				for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors) / sizeof(edid.descriptors[0]); des++) {
-                    switch (des->text.type)
-                    {
-                        case 0xFF:
-                            MyLog(@"I: got edid.serial: %@", EDIDString(des->text.data));
-                            break;
-                        case 0xFC:
-                            screenName = EDIDString(des->text.data);
-                            MyLog(@"I: got edid.name: %@", screenName);
-                            break;
-                    }
-                }
-
-                // Debugging
-                if (dump_values) {
-                    for (uint i=0x00; i<=255; i++) {
-                        getControl(cdisplay, i);
-                        usleep(command_interval);
-                    }
-                }
-
-                // Actions
-                [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
-                    NSInteger control_id = [valueArray[0] intValue];
-                    NSString *argval = valueArray[1];
-                    MyLog(@"D: action: %@: %@", argname, argval);
-
-                    if (control_id > -1) {
-                        // this is a valid monitor control
-                        NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
-                        if ([argval hasPrefix:@"+"] || [argval hasPrefix:@"-"]) { // +/-NN relative
-                            getSetControl(cdisplay, control_id, argval_num, [argval substringToIndex:1]);
-                        } else if ([argval hasSuffix:@"+"] || [argval hasSuffix:@"-"]) { // NN+/- relative
-                            // read, calculate, then write
-                            getSetControl(cdisplay, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
-                        } else if ([argval hasPrefix:@"?"]) {
-                            // read current setting
-                            getControl(cdisplay, control_id);
-                        } else if (argval_num == argval) {
-                            // write fixed setting
-                            setControl(cdisplay, control_id, [argval intValue]);
-                        }
-                    }
-                    usleep(command_interval); // stagger comms to these wimpy I2C mcu's
-                }];
-
-            } else {
-                MyLog(@"E: Failed to poll display!");
-                return -1;
-            }
-        } else { // no display id given
+        if (0 > displayId || displayId > [_displayIDs count]) {
+            // no display id given, nothing left to do!
             NSLog(@"%@", HelpString);
+            exit(1);
         }
-    }
+
+        CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
+
+        // find & grab the IOFramebuffer for the display, the IOFB is where DDC/I2C commands are sent
+        io_service_t framebuffer = 0;
+        NSString *devLoc = getDisplayDeviceLocation(cdisplay);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        if (CGDisplayIOServicePort != NULL) {
+            // legacy API call to get the IOFB's service port, was deprecated after macOS 10.9:
+            //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+            framebuffer = CGDisplayIOServicePort(cdisplay);
+#pragma clang diagnostic pop
+        }
+
+        if (! framebuffer && devLoc) {
+            // a devLoc is required because, without that IOReg path, this func is prone to always match the 1st device of a monitor-pair (#17)
+            framebuffer = IOFramebufferPortFromCGDisplayID(cdisplay, (__bridge CFStringRef)devLoc);
+        }
+
+        if (! framebuffer) {
+            MyLog(@"E: Failed to acquire framebuffer device for display");
+            return -1;
+        }
+
+        MyLog(@"I: polling EDID for #%lu (ID %u => %@)", displayId, cdisplay, devLoc);
+
+        struct EDID edid = {};
+        if (EDIDTest(framebuffer, &edid)) {
+            for (union descriptor *des = edid.descriptors; des < edid.descriptors + sizeof(edid.descriptors) / sizeof(edid.descriptors[0]); des++) {
+                switch (des->text.type)
+                {
+                    case 0xFF:
+                        MyLog(@"I: got edid.serial: %@", EDIDString(des->text.data));
+                        break;
+                    case 0xFC:
+                        screenName = EDIDString(des->text.data);
+                        MyLog(@"I: got edid.name: %@", screenName);
+                        break;
+                }
+            }
+        } else {
+            MyLog(@"E: Failed to poll display!");
+            IOObjectRelease(framebuffer);
+            return -1;
+        }
+
+        // Debugging
+        if (dump_values) {
+            for (uint i=0x00; i<=255; i++) {
+                getControl(framebuffer, i);
+                usleep(command_interval);
+            }
+        }
+
+        // Actions
+        [actions enumerateKeysAndObjectsUsingBlock:^(id argname, NSArray* valueArray, BOOL *stop) {
+            NSInteger control_id = [valueArray[0] intValue];
+            NSString *argval = valueArray[1];
+            MyLog(@"D: action: %@: %@", argname, argval);
+
+            if (control_id > -1) {
+                // this is a valid monitor control
+                NSString *argval_num = [argval stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"-+"]]; // look for relative setting ops
+                if ([argval hasPrefix:@"+"] || [argval hasPrefix:@"-"]) { // +/-NN relative
+                    getSetControl(framebuffer, control_id, argval_num, [argval substringToIndex:1]);
+                } else if ([argval hasSuffix:@"+"] || [argval hasSuffix:@"-"]) { // NN+/- relative
+                    // read, calculate, then write
+                    getSetControl(framebuffer, control_id, argval_num, [argval substringFromIndex:argval.length - 1]);
+                } else if ([argval hasPrefix:@"?"]) {
+                    // read current setting
+                    getControl(framebuffer, control_id);
+                } else if (argval_num == argval) {
+                    // write fixed setting
+                    setControl(framebuffer, control_id, [argval intValue]);
+                }
+            }
+            usleep(command_interval); // stagger comms to these wimpy I2C mcu's
+        }];
+        // done with all actions, release display's framebuffer
+        IOObjectRelease(framebuffer);
+    } // -autoreleasepool
     return 0;
-}
+} // -main

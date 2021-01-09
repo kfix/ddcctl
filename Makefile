@@ -1,7 +1,5 @@
 #!/bin/make -f
 
-CCFLAGS ?= -Wno-unused-variable
-
 ## Reply Transaction Type
 ## uncomment one only one
 ## comment both to use automatic detection
