@@ -374,15 +374,26 @@ int main(int argc, const char * argv[])
             }
         }
 
+        // find & grab the IOFramebuffer for the display, the IOFB is where DDC/I2C commands are sent
+        io_service_t framebuffer = 0;
         if (!devLoc) {
             MyLog(@"E: Failed to find display in WindowServer's preferences! (%@)", wsPrefs);
-            // we can try without this info, but we're likely to confuse identical monitors' framebuffers
+            // fuzzy-matching discovery of the device location failed, so try using the
+            // legacy API call to get the IOFB's service port
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+           // this API was deprecated after macOS 10.9:
+           //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+            framebuffer = CGDisplayIOServicePort(cdisplay);
+#pragma clang diagnostic pop
         }
 
-        // grab the IOFramebuffer for the display, this is where DDC/I2C commands are sent
-        io_service_t framebuffer;
-        if (! (framebuffer = IOFramebufferPortFromCGDisplayID(cdisplay, (__bridge CFStringRef)devLoc))) {
-            // CGDisplayIOServicePort(cdisplay) // Deprecated in OSX 10.9!
+        if (! framebuffer && devLoc) {
+            // a devLoc is required because, without that IOReg path, this func is prone to always match the 1st device of a monitor-pair (#17)
+            framebuffer = IOFramebufferPortFromCGDisplayID(cdisplay, (__bridge CFStringRef)devLoc);
+        }
+
+        if (! framebuffer) {
             MyLog(@"E: Failed to acquire framebuffer device for display");
             return -1;
         }

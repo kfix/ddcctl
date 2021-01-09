@@ -27,8 +27,7 @@ _Static_assert (0, "must build with `make (amd|intel|nvidia)`");
 
 /*
 
- Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID
- replaces CGDisplayIOServicePort: https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
+ Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID && IOReg path
  based on: https://github.com/glfw/glfw/pull/192/files
  */
 io_service_t IOFramebufferPortFromCGDisplayID(CGDirectDisplayID displayID, CFStringRef displayLocation)
