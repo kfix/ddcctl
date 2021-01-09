@@ -39,6 +39,11 @@ NSString *EDIDString(char *string)
 
 NSString *getDisplayDeviceLocation(CGDirectDisplayID cdisplay)
 {
+    // FIXME: scraping prefs files is vulnerable to use of stale data?
+    // TODO: try shelling `system_profiler SPDisplaysDataType -xml` to get "_spdisplays_displayPath" keys
+    //    this seems to use private routines in:
+    //      /System/Library/SystemProfiler/SPDisplaysReporter.spreporter/Contents/MacOS/SPDisplaysReporter
+
     // get the WindowServer's table of DisplayIds -> IODisplays
     NSString *wsPrefs = @"/Library/Preferences/com.apple.windowserver.plist";
     NSDictionary *wsDict = [NSDictionary dictionaryWithContentsOfFile:wsPrefs];
