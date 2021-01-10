@@ -25,12 +25,6 @@ endif
 
 all: clean $(PRODUCT_DIR)/ddcctl
 
-intel nvidia: CCFLAGS += -DkDDCMinReplyDelay=1
-intel nvidia: all
-
-amd: CCFLAGS += -DkDDCMinReplyDelay=30000000
-amd: all
-
 debug: clean
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
@@ -53,5 +47,4 @@ framebuffers:
 displaylist:
 	ioreg -c IODisplayConnect -b -f -r -l -i -d 2
 
-.PHONY: all debug clean install displaylist amd intel nvidia
-
+.PHONY: all debug clean install displaylist

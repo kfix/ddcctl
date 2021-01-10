@@ -10,12 +10,6 @@
 		8FB2F43F253CA13D0005A241 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41B253C9F8F0005A241 /* IOKit.framework */; };
 		8FB2F440253CA1480005A241 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41F253C9F990005A241 /* Foundation.framework */; };
 		8FB2F441253CA15D0005A241 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41D253C9F930005A241 /* AppKit.framework */; };
-		8FB2F442253CA17B0005A241 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41D253C9F930005A241 /* AppKit.framework */; };
-		8FB2F443253CA17B0005A241 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41F253C9F990005A241 /* Foundation.framework */; };
-		8FB2F444253CA17B0005A241 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FB2F41B253C9F8F0005A241 /* IOKit.framework */; };
-		8FB2F445253CA1860005A241 /* ddcctl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40C253C9DA20005A241 /* ddcctl.m */; };
-		8FB2F446253CA1860005A241 /* DDC.h in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40E253C9DA20005A241 /* DDC.h */; };
-		8FB2F447253CA1860005A241 /* DDC.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F410253C9DA20005A241 /* DDC.c */; };
 		8FB2F44A253CA1960005A241 /* ddcctl.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40C253C9DA20005A241 /* ddcctl.m */; };
 		8FB2F44B253CA1960005A241 /* DDC.h in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F40E253C9DA20005A241 /* DDC.h */; };
 		8FB2F44C253CA1960005A241 /* DDC.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FB2F410253C9DA20005A241 /* DDC.c */; };
@@ -23,15 +17,6 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		8FB2F426253CA0B90005A241 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		8FB2F434253CA0D80005A241 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -49,8 +34,7 @@
 		8FB2F41B253C9F8F0005A241 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		8FB2F41D253C9F930005A241 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		8FB2F41F253C9F990005A241 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		8FB2F428253CA0B90005A241 /* ddcctl-amd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "ddcctl-amd"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "ddcctl-intel_nvidia"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8FB2F428253CA0B90005A241 /* ddcctl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ddcctl; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,16 +45,6 @@
 				8FB2F440253CA1480005A241 /* Foundation.framework in Frameworks */,
 				8FB2F441253CA15D0005A241 /* AppKit.framework in Frameworks */,
 				8FB2F43F253CA13D0005A241 /* IOKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8FB2F433253CA0D80005A241 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8FB2F443253CA17B0005A241 /* Foundation.framework in Frameworks */,
-				8FB2F442253CA17B0005A241 /* AppKit.framework in Frameworks */,
-				8FB2F444253CA17B0005A241 /* IOKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,8 +63,7 @@
 		8FB2F400253C9D750005A241 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8FB2F428253CA0B90005A241 /* ddcctl-amd */,
-				8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */,
+				8FB2F428253CA0B90005A241 /* ddcctl */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,9 +91,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8FB2F427253CA0B90005A241 /* ddcctl-amd */ = {
+		8FB2F427253CA0B90005A241 /* ddcctl */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl-amd" */;
+			buildConfigurationList = 8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl" */;
 			buildPhases = (
 				8FB2F424253CA0B90005A241 /* Sources */,
 				8FB2F425253CA0B90005A241 /* Frameworks */,
@@ -131,27 +104,9 @@
 			);
 			dependencies = (
 			);
-			name = "ddcctl-amd";
-			productName = "ddcctl-amd";
-			productReference = 8FB2F428253CA0B90005A241 /* ddcctl-amd */;
-			productType = "com.apple.product-type.tool";
-		};
-		8FB2F435253CA0D80005A241 /* ddcctl-intel_nvidia */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 8FB2F43A253CA0D80005A241 /* Build configuration list for PBXNativeTarget "ddcctl-intel_nvidia" */;
-			buildPhases = (
-				8FB2F432253CA0D80005A241 /* Sources */,
-				8FB2F433253CA0D80005A241 /* Frameworks */,
-				8FB2F434253CA0D80005A241 /* CopyFiles */,
-				8FB2F466253CAA230005A241 /* ShellScript */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "ddcctl-intel_nvidia";
-			productName = "ddcctl-intel_nvidia";
-			productReference = 8FB2F436253CA0D80005A241 /* ddcctl-intel_nvidia */;
+			name = ddcctl;
+			productName = "ddcctl";
+			productReference = 8FB2F428253CA0B90005A241 /* ddcctl */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -163,9 +118,6 @@
 				LastUpgradeCheck = 1200;
 				TargetAttributes = {
 					8FB2F427253CA0B90005A241 = {
-						CreatedOnToolsVersion = 12.0.1;
-					};
-					8FB2F435253CA0D80005A241 = {
 						CreatedOnToolsVersion = 12.0.1;
 					};
 				};
@@ -183,31 +135,13 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8FB2F427253CA0B90005A241 /* ddcctl-amd */,
-				8FB2F435253CA0D80005A241 /* ddcctl-intel_nvidia */,
+				8FB2F427253CA0B90005A241 /* ddcctl */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		8FB2F459253CA6F80005A241 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 8;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"$INSTALL_DIR\"\nln -s \"$TARGET_NAME\" \"$PROJECT_NAME\"\n";
-		};
-		8FB2F466253CAA230005A241 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 8;
 			files = (
@@ -234,16 +168,6 @@
 				8FB2F44A253CA1960005A241 /* ddcctl.m in Sources */,
 				8FB2F44B253CA1960005A241 /* DDC.h in Sources */,
 				8FB2F44C253CA1960005A241 /* DDC.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8FB2F432253CA0D80005A241 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8FB2F445253CA1860005A241 /* ddcctl.m in Sources */,
-				8FB2F446253CA1860005A241 /* DDC.h in Sources */,
-				8FB2F447253CA1860005A241 /* DDC.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,7 +231,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
-					"-DkDDCMinReplyDelay=1",
 					"-Wall",
 					"-Wextra",
 				);
@@ -371,7 +294,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
-					"-DkDDCMinReplyDelay=1",
 					"-Wall",
 					"-Wextra",
 				);
@@ -385,7 +307,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				OTHER_CFLAGS = (
-					"-DkDDCMinReplyDelay=30000000",
 					"-Wall",
 					"-Wextra",
 				);
@@ -398,26 +319,9 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				OTHER_CFLAGS = (
-					"-DkDDCMinReplyDelay=30000000",
 					"-Wall",
 					"-Wextra",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		8FB2F43B253CA0D80005A241 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		8FB2F43C253CA0D80005A241 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -434,20 +338,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl-amd" */ = {
+		8FB2F42C253CA0B90005A241 /* Build configuration list for PBXNativeTarget "ddcctl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8FB2F42D253CA0B90005A241 /* Debug */,
 				8FB2F42E253CA0B90005A241 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		8FB2F43A253CA0D80005A241 /* Build configuration list for PBXNativeTarget "ddcctl-intel_nvidia" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				8FB2F43B253CA0D80005A241 /* Debug */,
-				8FB2F43C253CA0D80005A241 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
