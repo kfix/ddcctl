@@ -390,7 +390,7 @@ int main(int argc, const char * argv[])
             }
         }
 
-        if (0 > displayId || displayId > [_displayIDs count]) {
+        if (0 >= displayId || displayId > [_displayIDs count]) {
             // no display id given, nothing left to do!
             NSLog(@"%@", HelpString);
             exit(1);
