@@ -31,6 +31,8 @@ bool useOsd;
 
 extern io_service_t CGDisplayIOServicePort(CGDirectDisplayID display) __attribute__((weak_import));
 
+extern long DDCDelayBase;
+
 NSString *EDIDString(char *string)
 {
     NSString *temp = [[NSString alloc] initWithBytes:string length:13 encoding:NSASCIIStringEncoding];
@@ -217,7 +219,8 @@ int main(int argc, const char * argv[])
 
         NSString *HelpString = @"Usage:\n"
         @"ddcctl \t-d <1-..>  [display#]\n"
-        @"\t-w 100000  [delay usecs between settings]\n"
+        @"\t-w <0-..>  [delay in usecs between settings]\n"
+        @"\t-W <0-..>  [timeout in nanosecs for replies]\n"
         @"\n"
         @"----- Basic settings -----\n"
         @"\t-b <1-..>  [brightness]\n"
@@ -363,6 +366,13 @@ int main(int argc, const char * argv[])
                 if (i >= argc) break;
                 command_interval = atoi(argv[i]);
             }
+
+            else if (!strcmp(argv[i], "-W")) {
+                i++;
+                if (i >= argc) break;
+                DDCDelayBase = atoi(argv[i]);
+            }
+
 #ifdef OSD
             else if (!strcmp(argv[i], "-O")) {
                 useOsd = YES;

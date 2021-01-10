@@ -20,6 +20,8 @@
 #define kIOFBDependentIndexKey	"IOFBDependentIndex"
 #endif
 
+long DDCDelayBase = 1; // nanoseconds
+
 /*
 
  Iterate IOreg's device tree to find the IOFramebuffer mach service port that corresponds to a given CGDisplayID && IOReg path
@@ -193,11 +195,16 @@ bool FramebufferI2CRequest(io_service_t framebuffer, IOI2CRequest *request) {
 }
 
 long DDCDelay(io_service_t framebuffer) {
+    // Certain displays / graphics cards require a long-enough delay to yield a response to DDC commands
+    // Relying on retry will not help if the delay is too short.
+    // kernel panics are possible if value is wrong
+    // https://developer.apple.com/documentation/iokit/ioi2crequest/1410394-minreplydelay?language=objc
+
     CFStringRef ioRegPath = IORegistryEntryCopyPath(framebuffer,  kIOServicePlane);
     if (CFStringFind(ioRegPath, CFSTR("/AMD"), kCFCompareCaseInsensitive).location != kCFNotFound) {
-        return 30000000; // Team Red needs more time, as usual! 
+        return DDCDelayBase + 30000000; // Team Red needs more time, as usual!
     }
-    return 1;
+    return DDCDelayBase;
 }
 
 bool DDCWrite(io_service_t framebuffer, struct DDCWriteCommand *write) {
@@ -234,6 +241,8 @@ bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
     bool result = false;
     UInt8 data[128];
 
+    long reply_timeout = DDCDelay(framebuffer) * kNanosecondScale;
+
     for (int i=1; i<=kMaxRequests; i++) {
         bzero(&request, sizeof(request));
 
@@ -242,14 +251,7 @@ bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
         request.sendTransactionType             = kIOI2CSimpleTransactionType;
         request.sendBuffer                      = (vm_address_t) &data[0];
         request.sendBytes                       = 5;
-        // Certain displays / graphics cards require a long-enough delay to give a response.
-        // Relying on retry will not help if the delay is too short.
-        request.minReplyDelay                   = DDCDelay(framebuffer) * kNanosecondScale;
-		// FIXME: this should be tuneable at runtime
-		// https://github.com/kfix/ddcctl/issues/57
-		// incorrect values for GPU-vendor can cause kernel panic
-		// https://developer.apple.com/documentation/iokit/ioi2crequest/1410394-minreplydelay?language=objc
-
+        request.minReplyDelay                   = reply_timeout;
         data[0] = 0x51;
         data[1] = 0x82;
         data[2] = 0x01;
@@ -273,7 +275,7 @@ bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
 
         if (result) { // checksum is ok
             if (i > 1) {
-                printf("D: Tries required to get data: %d \n", i);
+                printf("D: Tries required to get data: %d (%ldns reply-timeout)\n", i, reply_timeout);
             }
             break;
         }
@@ -286,7 +288,7 @@ bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
             read->success = false;
             read->max_value = 0;
             read->current_value = 0;
-            printf("E: No data after %d tries! \n", i);
+            printf("E: No data after %d tries! (%ldns reply-timeout)\n", i, reply_timeout);
             return 0;
         }
 
