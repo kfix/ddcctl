@@ -18,13 +18,11 @@ And *possibly* (if your monitor firmware is well implemented):
 Head to [Releases](https://github.com/kfix/ddcctl/releases) and from the
 [latest release](https://github.com/kfix/ddcctl/releases/latest) download
 [`ddcctl_binaries.zip`](https://github.com/kfix/ddcctl/releases/latest/download/ddcctl_binaries.zip)
-archive that holds `ddcctl-intel`, `ddcctl-amd` and `ddcctl-nvidia` binaries
-respectively for Intel, AMD and Nvidia GPUs.
+archive
 
 ## Build from Source ##
 * install Xcode
-* figure out if your Mac is using an Intel, Nvidia or AMD GPU
-* run `make intel` or make `make nvidia` or `make amd`
+* run `make`
 
 # Usage #
 Run `ddcctl -h` for some options.  
