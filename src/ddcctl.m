@@ -19,6 +19,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AppKit/NSScreen.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import "DDC.h"
 
 #ifdef BLACKLIST
@@ -30,6 +31,8 @@ bool useOsd;
 #endif
 
 extern io_service_t CGDisplayIOServicePort(CGDirectDisplayID display) __attribute__((weak_import));
+
+extern void CGSServiceForDisplayNumber(CGDirectDisplayID display, io_service_t* service) __attribute__((weak_import));
 
 extern long DDCDelayBase;
 
@@ -418,6 +421,12 @@ int main(int argc, const char * argv[])
             //     https://developer.apple.com/library/mac/documentation/GraphicsImaging/Reference/Quartz_Services_Ref/index.html#//apple_ref/c/func/CGDisplayIOServicePort
             framebuffer = CGDisplayIOServicePort(cdisplay);
 #pragma clang diagnostic pop
+        }
+
+        if (! framebuffer && CGSServiceForDisplayNumber != NULL) {
+            // private API func is aliased to SLServiceForDisplayNumber within Skylight.framework, which CoreGraphics.framework links to
+            // see https://objective-see.com/blog/blog_0x2C.html "reversing apple's 'screencapture' to programmatically grab desktop images"
+            CGSServiceForDisplayNumber(cdisplay, &framebuffer);
         }
 
         if (! framebuffer && devLoc) {
