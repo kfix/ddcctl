@@ -13,13 +13,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Build
         run: |
-          make intel
-          mv ddcctl ddcctl-intel
-          make nvidia
-          mv ddcctl ddcctl-nvidia
-          make amd
-          mv ddcctl ddcctl-amd
-          zip ddcctl.zip ddcctl-intel ddcctl-nvidia ddcctl-amd
+          make
+          zip ddcctl.zip ddcctl
       - name: Get tag
         id: get_tag
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}

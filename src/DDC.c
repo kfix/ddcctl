@@ -15,11 +15,6 @@
 #define kMaxRequests 10
 #endif
 
-#ifndef kDDCMinReplyDelay
-// https://github.com/kfix/ddcctl/issues/57
-_Static_assert (0, "must build with `make (amd|intel|nvidia)`");
-#endif
-
 #ifndef _IOKIT_IOFRAMEBUFFER_H
 #define kIOFBDependentIDKey	"IOFBDependentID"
 #define kIOFBDependentIndexKey	"IOFBDependentIndex"
@@ -197,6 +192,14 @@ bool FramebufferI2CRequest(io_service_t framebuffer, IOI2CRequest *request) {
     return result && request->result == KERN_SUCCESS;
 }
 
+long DDCDelay(io_service_t framebuffer) {
+    CFStringRef ioRegPath = IORegistryEntryCopyPath(framebuffer,  kIOServicePlane);
+    if (CFStringFind(ioRegPath, CFSTR("/AMD"), kCFCompareCaseInsensitive).location != kCFNotFound) {
+        return 30000000; // Team Red needs more time, as usual! 
+    }
+    return 1;
+}
+
 bool DDCWrite(io_service_t framebuffer, struct DDCWriteCommand *write) {
     IOI2CRequest    request;
     UInt8           data[128];
@@ -241,7 +244,7 @@ bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read) {
         request.sendBytes                       = 5;
         // Certain displays / graphics cards require a long-enough delay to give a response.
         // Relying on retry will not help if the delay is too short.
-        request.minReplyDelay                   = kDDCMinReplyDelay * kNanosecondScale;
+        request.minReplyDelay                   = DDCDelay(framebuffer) * kNanosecondScale;
 		// FIXME: this should be tuneable at runtime
 		// https://github.com/kfix/ddcctl/issues/57
 		// incorrect values for GPU-vendor can cause kernel panic

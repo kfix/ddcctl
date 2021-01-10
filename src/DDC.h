@@ -234,6 +234,7 @@ struct EDID {
     UInt8 checksum : 8;
 };
 
+long DDCDelay(io_service_t framebuffer);
 bool DDCWrite(io_service_t framebuffer, struct DDCWriteCommand *write);
 bool DDCRead(io_service_t framebuffer, struct DDCReadCommand *read);
 bool EDIDTest(io_service_t framebuffer, struct EDID *edid);
