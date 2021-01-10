@@ -14,7 +14,7 @@ jobs:
       - name: Build
         run: |
           make
-          zip ddcctl.zip build/release/ddcctl
+          zip ddcctl.zip bin/release/ddcctl
       - name: Get tag
         id: get_tag
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
