@@ -13,14 +13,18 @@ And *possibly* (if your monitor firmware is well implemented):
 * color presets
 * reset
 
-# Install #
-## Download Binaries ##
+# Installation #
+
+## Option 1: Install via Homebrew ##
+Open a terminal window and run `$ brew install ddcctl`.
+
+## Option 2: Download Binaries ##
 Head to [Releases](https://github.com/kfix/ddcctl/releases) and from the
 [latest release](https://github.com/kfix/ddcctl/releases/latest) download
 [`ddcctl_binaries.zip`](https://github.com/kfix/ddcctl/releases/latest/download/ddcctl_binaries.zip)
 archive
 
-## Build from Source ##
+## Option 3: Build from Source ##
 * install Xcode
 * run `make`
 
