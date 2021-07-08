@@ -96,6 +96,7 @@ case "$1" in
     dim|bright|up|down) init; $1; savestate;;
     volmute) init; $1;;
     voldown|volup) init; $1; savestate;;
+    poweroff) init; $1;;
     *)  #no scheme given, match local Hour of Day
         #HoD=$(date +%k) #hour of day
         #let "night = (( $HoD < 7 || $HoD > 18 ))" #daytime is 7a-7p
