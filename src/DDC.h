@@ -12,6 +12,9 @@
 #define DDC_Panel_DDC_h
 
 #include <IOKit/i2c/IOI2CInterface.h>
+#include <CoreGraphics/CGDirectDisplay.h>
+#include <CoreGraphics/CGDisplayConfiguration.h>
+#include <ColorSync/ColorSyncDevice.h>
 
 #define RESET 0x04
 #define RESET_BRIGHTNESS_AND_CONTRAST 0x05
