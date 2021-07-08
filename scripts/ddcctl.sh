@@ -104,8 +104,8 @@ case "$1" in
     voldown|volup) init; $1; savestate;;
     poweroff) init; $1;;
     *)  #no scheme given, match local Hour of Day
-        #HoD=$(date +%k) #hour of day
-        #let "night = (( $HoD < 7 || $HoD > 18 ))" #daytime is 7a-7p
-        #(($night)) && dim || bright
+        HoD=$(date +%k) #hour of day
+        let "night = (( $HoD < 7 || $HoD > 18 ))" #daytime is 7a-7p
+        (($night)) && dim || bright
         ;;
 esac
