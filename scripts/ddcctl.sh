@@ -2,7 +2,7 @@
 #tweak OSX display monitors' brightness to a given scheme, increment, or based on the current local time
 
 hp="ddcctl -d 1"
-#len="ddcctl -d 2"
+len="ddcctl -d 2"
 
 poweroff() {
     # Power button will need pressing to power back on
@@ -36,28 +36,34 @@ volup() {
 
 dim() {
     $hp -b 42 -c 26
-    #$len -b 4 -c 9
+    $len -b 4 -c 9
 }
 
 bright() {
     $hp -b 100 -c 75
-    #$len -b 85 -c 80
+    $len -b 85 -c 80
 }
 
 up() {
     newb=$((brightness+10))
+    newc=$((contrast+10))
     [[ $newb -gt 100 ]] && newb=100
+    [[ $newc -gt 100 ]] && newc=100
     brightness=$newb
-    $hp -b $brightness -c 12+
-    #$len -b $brightness -c 12+
+    contrast=$newc
+    $hp -b $brightness -c $contrast
+    $len -b $brightness -c $contrast
 }
 
 down() {
     newb=$((brightness-10))
+    newc=$((contrast-10))
     [[ $newb -lt 0 ]] && newb=0
+    [[ $newc -lt 0 ]] && newc=0
     brightness=$newb
-    $hp -b $brightness -c 12-
-    #$len -b 20- -c 12-
+    contrast=$newc
+    $hp -b $brightness -c $contrast
+    $len -b $brightness -c $contrast
 }
 
 init() {
