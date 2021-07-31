@@ -23,9 +23,7 @@ else
 	PRODUCT_DIR = ./bin/release
 endif
 
-all: clean $(PRODUCT_DIR)/ddcctl
-
-debug: clean
+all debug: clean $(PRODUCT_DIR)/ddcctl
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
 	@mkdir -p $(@D)
