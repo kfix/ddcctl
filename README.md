@@ -19,7 +19,8 @@ This is a GPLv3 open source repo and you may use it in the ways that license all
 It is not a Community "Free Software" Project - its decidedly my personal utility and its in the (dreaded/loved) _"maintenance mode"_.
 
 # Reporting issues #
-To be blunt, if you have issues with your macOS, Macintosh (not hackintosh), and display hardware, then its up to *_you_* to debug them and (optionally) PR your fixes (see bottom section) if you'd like to share them.  
+To be blunt, if you have issues with your macOS, Macintosh (not hackintosh), and DDC-controlled monitor(s), then its up to *_you_* to debug them and (optionally) PR your fixes (see bottom section) if you'd like to share them.  
+
 I don't have the time currently to triage new Issues and help with the non-bugs being reported, and don't intend to moderate a support or discussion forum here.  
 
 # Installation #
