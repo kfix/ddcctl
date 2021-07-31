@@ -86,10 +86,7 @@ bug-fix & non-bug-fix/feature PRs have the same broad guidelines:
 
 As to additional criteria for new-features, please understand that `ddcctl` currently does what _I need it to do_ on my own all-Apple fleet.
 
-There is a soft backlog of some (broadly desirable) features that already have issues (visible to me):
-* [VCP code-support detection](https://github.com/kfix/ddcctl/issues/58)
-* [runtime adjustment of DDC delay-timings](https://github.com/kfix/ddcctl/issues/57)
-* [support on M1 platform](https://github.com/kfix/ddcctl/issues/86)
+There is a [backlog](https://github.com/kfix/ddcctl/projects/1) of some (broadly desirable) features that came from reported issues. PRs are encouraged to address these!  
 
 I'm not really interested in adding any features that I have no ability or desire to support on my own hardware.  
 
