@@ -16,8 +16,7 @@ And *possibly* (if your monitor firmware is well implemented):
 # Project Status #
 This is a GPLv3 open source repo and you may use it in the ways that license allows.  
 
-It is not a Community "Free Software" Project - its decidedly my personal utility and  
-its in the (dreaded/loved) _"maintenance mode"_.
+It is not a Community "Free Software" Project - its decidedly my personal utility and its in the (dreaded/loved) _"maintenance mode"_.
 
 I don't have the time currently to accept new Issues and do triaging of all the non-bugs being reported.  
 
@@ -85,8 +84,13 @@ bug-fix & non-bug-fix/feature PRs have the same broad guidelines:
   * provide _your_ test procedure, if you have one!
   * keep in mind my verification is always manual - I don't have a CI system wired up to a bank of real Macs & monitors
 
-As to additional criteria for new-features, please understand that `ddcctl` currently does what _I need it to do_ on my own all-Apple fleet (I don't own an M1 yet, but might later and work on its support).  
+As to additional criteria for new-features, please understand that `ddcctl` currently does what _I need it to do_ on my own all-Apple fleet.
 
-I'm not really interested in adding any more features that I have no ability or desire to support on my own hardware.  
+There is a soft backlog of some (broadly desirable) features that already have issues (visible to me):
+* [VCP code-support detection](https://github.com/kfix/ddcctl/issues/58)
+* [runtime adjustment of DDC delay-timings](https://github.com/kfix/ddcctl/issues/57)
+* [support on M1 platform](https://github.com/kfix/ddcctl/issues/86)
+
+I'm not really interested in adding any features that I have no ability or desire to support on my own hardware.  
 
 Unfortunately, I cannot make a time-to-review estimation - but the simpler/cleaner a PR is, the the faster its likely to get reviewed & merged.
