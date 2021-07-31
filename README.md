@@ -80,7 +80,7 @@ A few forks have also backported patches, which is *nice* :ok_hand:.
 
 bug-fix & non-bug-fix/feature PRs have the same broad guidelines:
 * well described as to the universal utility of the change for the (presumed) majority of users / developers
-  * or a positive proof that the change doesn't detract from the usability for the majority of users
+  * also helpful: a positive proof that the change doesn't detract from the usability for the majority of users
 * easy to test
   * provide _your_ test procedure, if you have one!
   * keep in mind my verification is always manual - I don't have a CI system wired up to a bank of real Macs & monitors
