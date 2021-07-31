@@ -13,6 +13,16 @@ And *possibly* (if your monitor firmware is well implemented):
 * color presets
 * reset
 
+# Project Status #
+This is a GPLv3 open source repo and you may use it in the ways that license allows.  
+
+It is not a Community "Free Software" Project - its decidedly my personal utility and  
+its in the (dreaded/loved) _"maintenance mode"_.
+
+I don't have the time currently to accept new Issues and do triaging of all the non-bugs being reported.  
+
+If you have issues with your OS and hardware, its up to you to debug them and (optionally) PR your fixes (see bottom section) if you'd like to share them.  
+
 # Installation #
 
 ## Option 1: Install via Homebrew ##
@@ -65,3 +75,18 @@ For example, to set your first display to HDMI: `ddcctl -d 1 -i 17`.
 `DDC.c` originated from [jontaylor/DDC-CI-Tools-for-OS-X](https://github.com/jontaylor/DDC-CI-Tools-for-OS-X), but was reworked by others on the forums.  
 
 A few forks have also backported patches, which is *nice* :ok_hand:.
+
+# Contributing PRs #
+
+bug-fix & non-bug-fix/feature PRs have the same broad guidelines:
+* well described as to the universal utility of the change for the (presumed) majority of users / developers
+  * or a positive proof that the change doesn't detract from the usability for the majority of users
+* easy to test
+  * provide _your_ test procedure, if you have one!
+  * keep in mind my verification is always manual - I don't have a CI system wired up to a bank of real Macs & monitors
+
+As to additional criteria for new-features, please understand that `ddcctl` currently does what _I need it to do_ on my own all-Apple fleet (I don't own an M1 yet, but might later and work on its support).  
+
+I'm not really interested in adding any more features that I have no ability or desire to support on my own hardware.  
+
+Unfortunately, I cannot make a time-to-review estimation - but the simpler/cleaner a PR is, the the faster its likely to get reviewed & merged.
