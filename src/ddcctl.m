@@ -166,7 +166,7 @@ int main(int argc, const char * argv[])
 
     @autoreleasepool {
 
-        NSPointerArray *_displayIDs = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsOpaqueMemory | NSPointerFunctionsIntegerPersonality];
+        NSMutableArray *_displayIDs = [NSMutableArray arrayWithCapacity:30];
 
         for (NSScreen *screen in NSScreen.screens)
         {
@@ -177,7 +177,7 @@ int main(int argc, const char * argv[])
                 // https://stackoverflow.com/a/48450870/3878712
                 CFUUIDRef screenUUID = CGDisplayCreateUUIDFromDisplayID(screenNumber);
                 CFStringRef screenUUIDstr = CFUUIDCreateString(NULL, screenUUID);
-                [_displayIDs addPointer:(void *)(UInt64)screenNumber];
+                [_displayIDs addObject:[NSNumber numberWithUnsignedInteger: screenNumber]];
                 NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
                 CGSize displayPhysicalSize = CGDisplayScreenSize(screenNumber); // dspPhySz only valid if EDID present!
                 float displayScale = [screen backingScaleFactor];
@@ -406,7 +406,7 @@ int main(int argc, const char * argv[])
             exit(1);
         }
 
-        CGDirectDisplayID cdisplay = (CGDirectDisplayID)[_displayIDs pointerAtIndex:displayId - 1];
+        CGDirectDisplayID cdisplay = ((NSNumber *)_displayIDs[displayId - 1]).unsignedIntegerValue;
 
         // find & grab the IOFramebuffer for the display, the IOFB is where DDC/I2C commands are sent
         io_service_t framebuffer = 0;
