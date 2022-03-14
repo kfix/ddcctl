@@ -420,7 +420,6 @@ int main(int argc, const char * argv[])
             for (NSNumber *dispId in _displayIDs)
             {
                 if (uid == dispId.unsignedIntegerValue) {
-                    NSLog(@"UID Match: %d", i);
                     displayId = i;
                     found = true;
                     break;
