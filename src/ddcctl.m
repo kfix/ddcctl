@@ -214,11 +214,13 @@ int main(int argc, const char * argv[])
         // Defaults
         NSString *screenName = @"";
         NSUInteger displayId = -1;
+        const char *displayUid = NULL;
         NSUInteger command_interval = 100000;
         BOOL dump_values = NO;
 
         NSString *HelpString = @"Usage:\n"
         @"ddcctl \t-d <1-..>  [display#]\n"
+        @"\t-di <0-..> [display id (overrides -d if specified)]\n"
         @"\t-w <0-..>  [delay in usecs between settings]\n"
         @"\t-W <0-..>  [timeout in nanosecs for replies]\n"
         @"\n"
@@ -259,6 +261,12 @@ int main(int argc, const char * argv[])
                 i++;
                 if (i >= argc) break;
                 displayId = atoi(argv[i]);
+            }
+
+            else if (!strcmp(argv[i], "-di")) {
+                i++;
+                if (i >= argc) break;
+                displayUid = argv[i];
             }
 
             else if (!strcmp(argv[i], "-b")) {
@@ -397,6 +405,31 @@ int main(int argc, const char * argv[])
             else {
                 NSLog(@"Unknown argument: %@", [[NSString alloc] initWithUTF8String:argv[i]]);
                 return -1;
+            }
+        }
+
+        if (displayUid != NULL) {
+            char *endptr;
+            uint uid = strtol(displayUid, &endptr, 10);
+            if (endptr == displayUid) {
+                NSLog(@"Display ID needs to be numeric");
+                exit(1);
+            }
+            int i = 1;
+            bool found = false;
+            for (NSNumber *dispId in _displayIDs)
+            {
+                if (uid == dispId.unsignedIntegerValue) {
+                    NSLog(@"UID Match: %d", i);
+                    displayId = i;
+                    found = true;
+                    break;
+                }
+                ++i;
+            }
+            if (!found) {
+                NSLog(@"Display ID %d not found", uid);
+                exit(1);
             }
         }
 
