@@ -8,7 +8,6 @@ And *possibly* (if your monitor firmware is well implemented):
 
 * input source
 * built-in speaker volume
-* on/off/standby
 * rgb colors
 * color presets
 * reset
