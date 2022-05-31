@@ -234,7 +234,6 @@ int main(int argc, const char * argv[])
         @"\t-m <1|2>   [mute speaker OFF/ON]\n"
         @"\t-v <1-254> [speaker volume]\n"
         @"\t-i <1-18>  [select input source]\n"
-        @"\t-p <1|2-5> [power on | standby/off]\n"
         @"\t-o         [read-only orientation]\n"
         @"\n"
         @"----- Settings (testing) -----\n"
@@ -306,7 +305,7 @@ int main(int argc, const char * argv[])
             else if (!strcmp(argv[i], "-p")) {
                 i++;
                 if (i >= argc) break;
-                [actions setObject:@[@DPMS, [[NSString alloc] initWithUTF8String:argv[i]]] forKey:@"p"];
+                /* was DPMS toggle, but now is no-op because it was bricking monitors (https://github.com/kfix/ddcctl/issues/89) */
             }
 
             else if (!strcmp(argv[i], "-o")) { // read only
