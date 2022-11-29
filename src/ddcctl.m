@@ -31,8 +31,6 @@ bool useOsd;
 
 extern io_service_t CGDisplayIOServicePort(CGDirectDisplayID display) __attribute__((weak_import));
 
-long DDCDelayBase;
-
 NSString *EDIDString(char *string)
 {
     NSString *temp = [[NSString alloc] initWithBytes:string length:13 encoding:NSASCIIStringEncoding];
